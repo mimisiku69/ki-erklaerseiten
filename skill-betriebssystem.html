@@ -1,0 +1,1010 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Das selbstlernende Skill-Betriebssystem im Zoom</title>
+<meta name="description" content="Meine Skills lernen mit: 24 Skills in 4 Ebenen, ein gemeinsamer Bauplan, ein eigenes Gedächtnis je Skill. Meine Skill-Architektur als Zoom-Präsentation.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="Ingo Günther">
+<meta property="og:title" content="Meine Skills lernen mit: Von der Skill-Architektur zum selbstlernenden Skill-Betriebssystem">
+<meta property="og:description" content="24 Skills in 4 Ebenen, ein gemeinsamer Bauplan, ein eigenes Gedächtnis je Skill. Meine Skill-Architektur im Zoom, mit Einladung zum Nachbau.">
+<meta name="twitter:title" content="Meine Skills lernen mit: das selbstlernende Skill-Betriebssystem">
+<meta name="twitter:description" content="24 Skills in 4 Ebenen, ein gemeinsamer Bauplan, ein eigenes Gedächtnis je Skill.">
+</head><body>
+<style>
+  :root {
+    --bg: #F3F5F8;
+    --bg-card: #FFFFFF;
+    --ink: #0D1B2E;
+    --ink-soft: #4A5A6E;
+    --navy: #1B3A5F;
+    --navy-soft: #2E527D;
+    --orange: #F08223;
+    --orange-ink: #B85E0C;
+    --net: #9FB6CF;
+    --s0-fill: #1B3A5F;
+    --s1-fill: #2E527D;
+    --s2-fill: #B85E0C;
+    --meta-fill: #5B6B80;
+    --band: #E4EAF1;
+    --shadow: 0 18px 50px rgba(13, 27, 46, .16);
+    --band-schatten: #0D1B2E;
+    --band-schatten-deckung: .18;
+    --band-linie: #C3D2E2;
+    --wegweiser-bg: #FAFCFE;
+    --wegweiser-linie: #D5DFEA;
+    --focus: #F08223;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1B2C;
+      --bg-card: #17293F;
+      --ink: #E8EEF5;
+      --ink-soft: #A9B8CB;
+      --navy: #BFD9F4;
+      --navy-soft: #8FB2D6;
+      --orange: #F5A155;
+      --orange-ink: #F5A155;
+      --net: #3C5A80;
+      --s0-fill: #2E527D;
+      --s1-fill: #3D6796;
+      --s2-fill: #C4761F;
+      --meta-fill: #64748B;
+      --band: #1D3145;
+      --shadow: 0 18px 50px rgba(0, 0, 0, .45);
+      --band-schatten: #000000;
+      --band-schatten-deckung: .45;
+      --band-linie: #33506F;
+      --wegweiser-bg: #16283C;
+      --wegweiser-linie: #33506F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1B2C;
+    --bg-card: #17293F;
+    --ink: #E8EEF5;
+    --ink-soft: #A9B8CB;
+    --navy: #BFD9F4;
+    --navy-soft: #8FB2D6;
+    --orange: #F5A155;
+    --orange-ink: #F5A155;
+    --net: #3C5A80;
+    --s0-fill: #2E527D;
+    --s1-fill: #3D6796;
+    --s2-fill: #C4761F;
+    --meta-fill: #64748B;
+    --band: #1D3145;
+    --shadow: 0 18px 50px rgba(0, 0, 0, .45);
+    --band-schatten: #000000;
+    --band-schatten-deckung: .45;
+    --band-linie: #33506F;
+    --wegweiser-bg: #16283C;
+    --wegweiser-linie: #33506F;
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Arimo", Arial, "Liberation Sans", Helvetica, sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+  body.impress-not-supported { overflow: auto; }
+
+  .step {
+    position: relative;
+    width: 880px;
+    box-sizing: border-box;
+    transition: opacity .8s ease;
+  }
+  .impress-enabled .step { opacity: 0; pointer-events: none; }
+  .impress-enabled .step.active { opacity: 1; pointer-events: auto; }
+  .impress-enabled #ueberblick { opacity: 1; pointer-events: auto; }
+  .impress-enabled #ueberblick.active .map-legend,
+  .impress-enabled #ueberblick.active .map-title { opacity: 1; }
+  .tour { width: 10px; height: 10px; }
+
+  .tafel {
+    position: fixed; left: 28px; top: 50%; transform: translateY(-50%);
+    width: clamp(340px, 30vw, 500px); z-index: 5;
+    background: var(--bg-card);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: clamp(14px, 2vw, 24px) clamp(16px, 2.2vw, 28px) clamp(16px, 2vw, 26px);
+    border-top: 6px solid var(--navy);
+    opacity: 0; visibility: hidden; transition: opacity .6s, visibility .6s;
+  }
+  .tafel.t2 { border-top-color: var(--s2-fill); }
+  .tafel.tm { border-top-color: var(--meta-fill); }
+  .tafel.tall { border-top-color: var(--orange); }
+  body.hl-s0 #tafel-s0, body.hl-s1 #tafel-s1, body.hl-s2 #tafel-s2,
+  body.hl-meta #tafel-meta, body.hl-all #tafel-all { opacity: 1; visibility: visible; }
+  .tafel h2 { font-size: clamp(22px, 2.2vw, 30px); color: var(--navy); margin-top: 4px; }
+  .tafel p { font-size: clamp(15px, 1.45vw, 19px); margin-top: 12px; }
+  .tafel .eyebrow { font-size: clamp(11px, 1.05vw, 14px); }
+  .tafel .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .tafel .mehr { display: inline-block; margin-top: 14px; font-size: clamp(13px, 1.2vw, 15px);
+    color: var(--orange-ink); font-weight: 700; }
+  .chip { font-size: clamp(11px, 1.05vw, 14px); font-weight: 700; padding: 5px 13px; border-radius: 999px; background: var(--s0-fill); color: #fff; }
+
+  h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.15; }
+  p { margin: 0; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 13px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--orange-ink);
+  }
+
+  /* ---------- Titel ---------- */
+  #titel { width: 980px; padding: 20px 0; cursor: pointer; }
+  #titel h1 { font-size: 56px; font-weight: 700; color: var(--navy); letter-spacing: -.01em; }
+  #titel h1 span { color: var(--orange); }
+  #titel .sub { font-size: 21px; margin-top: 14px; max-width: 46ch; color: var(--ink); }
+  #titel .warum { display: grid; grid-template-columns: 1fr 1.15fr; gap: 28px; margin-top: 26px; }
+  #titel .warum h2 { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--orange-ink); margin-bottom: 8px; }
+  #titel .warum p { font-size: 15px; line-height: 1.5; }
+  #titel .warum ul { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.45; }
+  #titel .warum li { margin-bottom: 4px; }
+  #titel .warum li strong { color: var(--navy); }
+  #titel .einladung { margin-top: 18px; padding: 12px 16px; border-left: 4px solid var(--orange);
+    background: color-mix(in srgb, var(--orange) 9%, var(--bg-card)); border-radius: 0 10px 10px 0; font-size: 15px; line-height: 1.5; }
+  #titel .einladung strong { color: var(--navy); }
+  #titel .einladung a { color: var(--navy); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  #titel .einladung a:hover { color: var(--orange-ink); }
+  #titel .einladung a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  #titel:focus-visible { outline: 3px solid var(--focus); outline-offset: 12px; border-radius: 6px; }
+  #titel .meta { margin-top: 16px; font-size: 14px; color: var(--ink-soft); display: flex; gap: 28px; flex-wrap: wrap; }
+  #titel .hint { margin-top: 14px; font-size: 14px; color: var(--ink-soft); border-top: 1px solid var(--net); padding-top: 12px; }
+  #titel .hint strong { color: var(--orange-ink); }
+  kbd { font-family: inherit; font-size: 13px; font-weight: 700; padding: 1px 7px;
+        border: 1px solid var(--net); border-radius: 4px; background: var(--bg-card); color: var(--ink); }
+
+  /* ---------- Überblick: die Landkarte ---------- */
+  #ueberblick { width: 1000px; height: 740px; }
+  #ueberblick svg { width: 940px; height: 560px; margin: 92px auto 0; display: block; overflow: visible; }
+  .bandrect { fill: var(--band); rx: 20; filter: url(#bandschatten);
+    stroke: var(--band-linie); stroke-width: 1; }
+  #bandschatten feDropShadow { flood-color: var(--band-schatten); flood-opacity: var(--band-schatten-deckung); }
+  .bandlabel { font-family: inherit; font-weight: 700; font-size: 21px; fill: var(--navy); text-anchor: start; dominant-baseline: middle; }
+  .bandgroup { cursor: pointer; }
+  .bandgroup:hover .bandlabel { fill: var(--orange-ink); text-decoration: underline; }
+  .bandgroup:hover .bandhit { fill: color-mix(in srgb, var(--orange) 14%, transparent); }
+  .bandgroup:focus-visible { outline: none; }
+  .bandgroup:focus-visible .bandhit { fill: color-mix(in srgb, var(--orange) 22%, transparent); }
+  .bandhit { fill: transparent; rx: 12; }
+  .verbindet-flaeche { fill: var(--orange); transition: fill .3s; }
+  .verbindet-text { font-family: inherit; font-weight: 700; font-size: 17px; fill: #fff;
+    text-anchor: middle; dominant-baseline: middle; }
+  .bandgroup.verbindet:hover .verbindet-flaeche { fill: var(--orange-ink); }
+  .bandgroup.verbindet:hover .verbindet-text { text-decoration: none; }
+  .bandgroup.verbindet:focus-visible .verbindet-flaeche { fill: var(--orange-ink); stroke: var(--navy); stroke-width: 3; }
+  .bandgroup.verbindet.zwei .verbindet-flaeche { fill: var(--s0-fill); }
+  .bandgroup.verbindet.zwei:hover .verbindet-flaeche { fill: var(--navy-soft); }
+  .bandgroup.verbindet.zwei:focus-visible .verbindet-flaeche { fill: var(--navy-soft); stroke: var(--orange); stroke-width: 3; }
+  .bandgroup.verbindet.drei .verbindet-flaeche { fill: var(--s1-fill); }
+  .bandgroup.verbindet.drei:hover .verbindet-flaeche { fill: var(--navy); }
+  .bandgroup.verbindet.drei:focus-visible .verbindet-flaeche { fill: var(--navy); stroke: var(--orange); stroke-width: 3; }
+  .bandgroup.verbindet.vier .verbindet-flaeche { fill: var(--meta-fill); }
+  .bandgroup.verbindet.vier:hover .verbindet-flaeche { fill: var(--navy); }
+  .bandgroup.verbindet.vier:focus-visible .verbindet-flaeche { fill: var(--navy); stroke: var(--orange); stroke-width: 3; }
+  .bandcount { font-family: inherit; font-size: 15px; fill: var(--ink-soft); text-anchor: start; dominant-baseline: middle; }
+  .node rect { stroke: var(--bg); stroke-width: 3; transition: opacity .6s; }
+  .node.s0 rect { fill: var(--s0-fill); }
+  .node.s1 rect { fill: var(--s1-fill); }
+  .node.s2 rect { fill: var(--s2-fill); }
+  .node.meta rect { fill: var(--meta-fill); }
+  .node.key rect { fill: var(--orange); }
+  .node text { font-family: inherit; font-weight: 700; font-size: 17px; fill: #fff;
+               text-anchor: middle; dominant-baseline: middle; }
+  .flowarrow { stroke: var(--net); stroke-width: 2.4; fill: none; marker-end: url(#pfeil); transition: opacity .6s, stroke .6s; }
+  .map-legend { position: absolute; left: 24px; bottom: 10px;
+    display: flex; gap: 16px; font-size: 13px; color: var(--ink-soft);
+    opacity: 0; transition: opacity .6s; flex-wrap: wrap; }
+  .map-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px;
+    border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .map-legend .l0::before { background: var(--s0-fill); }
+  .map-legend .l1::before { background: var(--s1-fill); }
+  .map-legend .l2::before { background: var(--s2-fill); }
+  .map-legend .lm::before { background: var(--meta-fill); }
+  .map-legend .lk::before { background: var(--orange); }
+  .map-title { position: absolute; top: 10px; left: 24px; font-size: 27px; font-weight: 700;
+    color: var(--navy); opacity: 0; transition: opacity .6s; line-height: 1.2; }
+  .map-title span { display: block; font-size: 15px; font-weight: 400; color: var(--ink-soft); margin-top: 3px; }
+
+  body.hl-s0 .node:not(.s0) { opacity: .22; }
+  body.hl-s1 .node:not(.s1) { opacity: .22; }
+  body.hl-s2 .node:not(.s2) { opacity: .22; }
+  body.hl-meta .node:not(.meta) { opacity: .22; }
+  body.hl-all .flowarrow { stroke: var(--orange); stroke-width: 3.4; }
+
+  /* Wegweiser nur im Überblick zeigen, während der Rundgänge ausblenden */
+  .wegweiser { transition: opacity .6s; }
+  .wegweiser-flaeche { fill: var(--wegweiser-bg); stroke: var(--wegweiser-linie); stroke-width: 1;
+    filter: url(#bandschatten); }
+  .wegweiser-rubrik { font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; fill: var(--orange-ink); text-anchor: start; dominant-baseline: middle; }
+  .wegweiser-trenner { stroke: var(--wegweiser-linie); stroke-width: 1; }
+  .wegweiser-fuss { font-family: inherit; font-size: 13px; fill: var(--ink-soft);
+    text-anchor: start; dominant-baseline: middle; opacity: .85; }
+  body.hl-s0 .wegweiser, body.hl-s1 .wegweiser, body.hl-s2 .wegweiser,
+  body.hl-meta .wegweiser, body.hl-all .wegweiser { opacity: 0; pointer-events: none; }
+
+  /* ---------- Karten ---------- */
+  .karte {
+    width: 880px; background: var(--bg-card); border-radius: 18px;
+    box-shadow: var(--shadow); padding: 34px 40px 36px;
+    display: grid; grid-template-columns: 150px 1fr; gap: 10px 32px;
+  }
+  .karte .badge {
+    grid-row: 1 / span 4; width: 150px; height: 150px; border-radius: 24px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 19px; line-height: 1.1; text-align: center; color: #fff;
+  }
+  .karte .badge small { font-size: 12px; font-weight: 400; letter-spacing: .06em; margin-top: 6px; }
+  .karte.k0 .badge { background: var(--s0-fill); }
+  .karte.k1 .badge { background: var(--s1-fill); }
+  .karte.k2 .badge { background: var(--s2-fill); }
+  .karte.km .badge { background: var(--meta-fill); }
+  .karte.kk .badge { background: var(--orange); }
+  .karte h2 { font-size: 34px; color: var(--navy); }
+  .karte h2 em { font-style: normal; font-weight: 400; color: var(--ink-soft); font-size: 19px; margin-left: 10px; }
+  .karte .def { font-size: 19px; max-width: 60ch; }
+  .karte .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 8px; }
+  .karte h3 { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+              color: var(--orange-ink); margin-bottom: 8px; }
+  .karte ul { margin: 0; padding-left: 18px; font-size: 16px; }
+  .karte li { margin-bottom: 5px; }
+  .karte .ohne {
+    grid-column: 1 / -1; margin-top: 10px; padding: 14px 18px;
+    border-left: 4px solid var(--orange); background: color-mix(in srgb, var(--orange) 9%, var(--bg-card));
+    font-size: 16px; border-radius: 0 10px 10px 0;
+  }
+  .karte .ohne strong { color: var(--navy); }
+  .karte pre { grid-column: 1 / -1; margin: 12px 0 0; padding: 14px 18px; border-radius: 10px;
+    background: color-mix(in srgb, var(--navy) 7%, var(--bg-card)); border-left: 4px solid var(--navy);
+    font-family: Menlo, Consolas, monospace; font-size: 15px; line-height: 1.55; color: var(--ink);
+    white-space: pre-wrap; }
+
+  /* ---------- Textseiten ---------- */
+  .seite { width: 940px; background: var(--bg-card); border-radius: 18px;
+    box-shadow: var(--shadow); padding: 38px 44px 40px; }
+  .seite h2 { font-size: 36px; color: var(--navy); margin-top: 6px; }
+  .seite .lead { font-size: 20px; margin-top: 14px; max-width: 60ch; }
+  .seite .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 24px; }
+  .seite .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; margin-top: 24px; }
+  .seite h3 { font-size: 18px; color: var(--navy); margin-bottom: 8px; }
+  .seite ul { margin: 0; padding-left: 20px; font-size: 16px; }
+  .seite li { margin-bottom: 6px; }
+  .seite pre { margin: 16px 0 0; padding: 16px 20px; border-radius: 10px;
+    background: color-mix(in srgb, var(--navy) 7%, var(--bg-card)); border-left: 4px solid var(--orange);
+    font-family: Menlo, Consolas, monospace; font-size: 15px; line-height: 1.6; color: var(--ink);
+    white-space: pre-wrap; }
+  .seite .zitat { margin-top: 24px; padding: 16px 20px; border-left: 4px solid var(--orange);
+    background: color-mix(in srgb, var(--orange) 9%, var(--bg-card)); border-radius: 0 10px 10px 0; font-size: 17px; }
+  .check { list-style: none; padding: 0; margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 22px; }
+  .check li { display: flex; gap: 10px; align-items: baseline; font-size: 16px; }
+  .check li::before { content: ""; width: 10px; height: 10px; border-radius: 50%; flex: none;
+    background: var(--s0-fill); transform: translateY(-1px); }
+  .check li.o::before { background: var(--orange); }
+  .quellen { font-size: 14px; color: var(--ink-soft); margin-top: 22px; line-height: 1.6; }
+  .quellen a { color: var(--navy); }
+  .quellen a:focus-visible, .toolbar-wrap button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  /* ---------- Bedienleiste ---------- */
+  .hud { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 18px; font-size: 14px; color: var(--ink-soft); pointer-events: none; }
+  .hud > * { pointer-events: auto; }
+  .hud .brand { font-weight: 700; color: var(--navy); }
+  .hud .brand span { color: var(--orange); }
+  .toolbar-wrap { display: flex; gap: 8px; }
+  .toolbar-wrap button { font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
+    background: var(--bg-card); color: var(--navy); border: 1px solid var(--net);
+    border-radius: 999px; padding: 6px 16px; }
+  .toolbar-wrap button:hover { border-color: var(--orange); }
+  .toolbar-wrap button.betont { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .toolbar-wrap button.betont:hover { background: var(--orange-ink); border-color: var(--orange-ink); }
+  .impress-progressbar { position: fixed; left: 0; right: 0; top: 0; height: 4px; background: transparent; z-index: 10; }
+  .impress-progressbar > div { height: 4px; background: var(--orange); width: 0; transition: width .5s; }
+  .impress-progress { display: none; }
+  #impress-help { display: none; }
+
+  /* ---------- Fallback ---------- */
+  .impress-not-supported #impress { max-width: 980px; margin: 0 auto; padding: 40px 20px; display: grid; gap: 40px; }
+  .impress-not-supported .step { width: auto; opacity: 1; }
+  .impress-not-supported #ueberblick { height: auto; }
+  .impress-not-supported #ueberblick svg { width: 100%; height: auto; margin: 0; }
+  .impress-not-supported .map-title, .impress-not-supported .map-legend { position: static; opacity: 1; margin: 10px 0; }
+  .impress-not-supported .tour { display: none; }
+  .impress-not-supported .tafel { position: static; transform: none; opacity: 1; visibility: visible;
+    width: auto; max-width: 920px; margin: 0 auto 30px; }
+  .impress-not-supported .hud { display: none; }
+  .impress-not-supported .fallback-note { display: block; }
+  .fallback-note { display: none; font-size: 14px; color: var(--ink-soft); max-width: 60ch; margin: 0 auto 8px; text-align: center; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .step, .node rect, .flowarrow, .map-legend, .map-title, .tafel { transition: none; }
+  }
+</style>
+
+<p class="fallback-note">Die Zoom-Darstellung konnte nicht geladen werden. Die Inhalte folgen hier als einfache Seite.</p>
+
+<div id="impress" data-transition-duration="1100" data-width="1024" data-height="768" data-min-scale="0" data-max-scale="3">
+
+  <!-- 1 Titel -->
+  <section id="titel" class="step" data-x="0" data-y="-3000" data-scale="2" data-rotate="-3">
+    <span class="eyebrow">Skill-Architektur</span>
+    <h1>Von der Struktur zum <span>lernenden System</span></h1>
+    <p class="sub">24 Skills, 4 Ebenen, ein gemeinsamer Bauplan. Und ein Modul, das dafür sorgt, dass sich Fehler nicht wiederholen.</p>
+    <div class="warum">
+      <div>
+        <h2>Was hier gezeigt wird</h2>
+        <p>Meine eigene Skill-Architektur, mit der ich täglich arbeite. Kein Lehrbuchbeispiel, sondern ein Aufbau, den ich mir über die letzten Monate Schritt für Schritt erarbeitet habe und laufend weiter verbessere. Jeder Umbau, jede Korrektur und jeder Fehler hat Spuren hinterlassen, die hier sichtbar sind.</p>
+      </div>
+      <div>
+        <h2>Warum sich dieser Aufbau lohnt</h2>
+        <ul>
+          <li><strong>Eine Regel, ein Ort.</strong> Farben, Sprache, Recht liegen je einmal im Fundament. Ändert sich etwas, wirkt es überall.</li>
+          <li><strong>Nachvollziehbar.</strong> Jeder Skill trägt Version, Datum und seine Abhängigkeiten offen im Kopf.</li>
+          <li><strong>Geprüft vor der Ausgabe.</strong> Ein festes Gate fängt Fehler ab, bevor ein Dokument das Haus verlässt.</li>
+          <li><strong>Lernt aus Fehlern.</strong> Jeder Skill führt ein eigenes Gedächtnis. Was einmal schiefging, passiert nicht noch einmal.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="einladung"><strong>Einladung zum Nachbau.</strong> Die Mechanik braucht kein besonderes Werkzeug, nur eine Entscheidung und eine Textdatei je Prozess. Wer das übernimmt, anders löst oder daran zweifelt: Ich freue mich über Austausch, auf <a href="https://www.linkedin.com/in/ingo-guenther/" target="_blank" rel="noopener noreferrer">LinkedIn</a>.</p>
+    <div class="meta">
+      <span>Stand 5. September 2026</span>
+      <span>Ingo Günther</span>
+    </div>
+    <p class="hint"><strong>Klick auf diese Seite erklärt zuerst, was ein Skill ist, danach folgt die Landkarte.</strong> <kbd>Leertaste</kbd> oder <kbd>→</kbd> weiter, <kbd>←</kbd> zurück, Klick auf einen Skill springt direkt dorthin.</p>
+  </section>
+
+  <!-- 1a Was ist ein Skill: Definition und Beispiel, direkt nach dem Titel -->
+  <section id="was-ist-ein-skill" class="step" data-x="3400" data-y="-3000" data-scale="1.5" data-rotate="2">
+    <div class="seite">
+      <span class="eyebrow">Begriff</span>
+      <h2>Was ist ein Skill?</h2>
+      <p class="lead">Ein Skill (deutsch: Fähigkeit) ist eine gespeicherte Anleitung, mit der ein KI-Werkzeug eine wiederkehrende Aufgabe immer auf dieselbe Weise erledigt. Sie enthält den Ablauf, Regeln, Beispiele und bei Bedarf Dateien und Skripte. Das Werkzeug ruft den Skill selbst auf, sobald eine passende Aufgabe kommt. In der KI-Welt werden Skill und Fähigkeit gleichbedeutend verwendet.</p>
+      <div class="grid2">
+        <div><h3>Was einen Skill vom Prompt unterscheidet</h3><ul>
+          <li><strong>Einmal beschreiben, immer wieder nutzen.</strong> Ein Prompt gilt für ein Gespräch, ein Skill für jede Aufgabe dieser Art.</li>
+          <li><strong>Mehr als Text.</strong> Vorlagen, Prüfskripte und Beispiele gehören dazu.</li>
+          <li><strong>Teilbar.</strong> Ein Skill lässt sich weitergeben, versionieren und im Team gemeinsam pflegen.</li>
+          <li><strong>Lernfähig.</strong> Hier führt jeder Skill ein eigenes Gedächtnis für Fehler und Lösungswege.</li>
+        </ul></div>
+        <div><h3>Beispiel aus diesem System</h3><ul>
+          <li><strong>Aufgabe:</strong> Aus dem Transkript eines Seminartags soll ein Handout entstehen.</li>
+          <li><strong>Ohne Skill:</strong> Jedes Mal neu erklären, was weggelassen wird, wie anonymisiert wird, welche Farben, welche Schrift, welche Prüfung.</li>
+          <li><strong>Mit Skill „seminar-handout“:</strong> Transkript hochladen, ein Satz als Auftrag. Der Skill kennt Ablauf, Vorlage und Prüfung und liefert das fertige Dokument.</li>
+          <li><strong>Bei anderen Anbietern:</strong> OpenAI, Google und xAI nennen das Prinzip inzwischen ebenfalls Skill. Bei OpenAI bündeln Plugins mehrere Skills (Stand November 2026).</li>
+        </ul></div>
+      </div>
+      <div class="zitat">Faustregel: Alles, was du einem KI-Werkzeug zum dritten Mal erklärst, gehört in einen Skill.</div>
+    </div>
+  </section>
+
+  <!-- 2 Überblick: die Landkarte -->
+  <section id="ueberblick" class="step" data-x="0" data-y="0" data-scale="4" data-highlight="none">
+    <p class="map-title">Aktuelle Skill-Architektur<span>24 Skills in 4 Ebenen</span></p>
+    <svg viewBox="-700 -420 1400 820" role="img" aria-label="Schichtenmodell der Skill-Architektur: unten Schicht 0 Fundament mit 8 Regelwerk-Skills, darüber Schicht 1 Erzeuger mit 8 dokumenterzeugenden Skills, darüber Schicht 2 Workflow mit 5 orchestrierenden Skills, oben 3 Meta- und Werkzeug-Skills. Pfeile zeigen, dass jede obere Ebene die Ebenen darunter nutzt.">
+      <defs>
+        <filter id="bandschatten" x="-8%" y="-60%" width="116%" height="240%">
+          <feDropShadow dx="0" dy="7" stdDeviation="9"/>
+        </filter>
+        <marker id="pfeil" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#9FB6CF"/>
+        </marker>
+      </defs>
+
+      <!-- Nutzungspfeile zwischen den Ebenen -->
+      <path class="flowarrow" d="M -520 -300 L -520 -190"/>
+      <path class="flowarrow" d="M -520 -190 L -520 -70"/>
+      <path class="flowarrow" d="M -520 -10 L -520 100"/>
+
+      <!-- Meta -->
+      <rect class="bandrect" x="-420" y="-400" width="1100" height="90" rx="20"/>
+      <g class="bandgroup" data-ziel="meta-karte" role="button" tabindex="0" aria-label="Meta und Werkzeug: Erklärung öffnen">
+        <rect class="bandhit" x="-700" y="-392" width="270" height="62"/>
+        <text class="bandlabel" x="-690" y="-368">Meta / Werkzeug</text>
+        <text class="bandcount" x="-690" y="-342">3 Skills</text>
+      </g>
+      <g class="node meta" data-key="n22"><rect x="-377" y="-380" width="280" height="50" rx="25"/><text x="-237" y="-355">skill-erstellen</text></g>
+      <g class="node meta" data-key="n23"><rect x="-11" y="-380" width="280" height="50" rx="25"/><text x="129" y="-355">prompt-engineer</text></g>
+      <g class="node meta" data-key="n24"><rect x="355" y="-380" width="280" height="50" rx="25"/><text x="495" y="-355">produkt-architektur</text></g>
+
+      <!-- Schicht 2 -->
+      <rect class="bandrect" x="-420" y="-280" width="1100" height="90" rx="20"/>
+      <g class="bandgroup" data-ziel="workflow" role="button" tabindex="0" aria-label="Schicht 2 Workflow: Erklärung öffnen">
+        <rect class="bandhit" x="-700" y="-272" width="270" height="62"/>
+        <text class="bandlabel" x="-690" y="-248">Schicht 2</text>
+        <text class="bandcount" x="-690" y="-222">Workflow · 5 Skills</text>
+      </g>
+      <g class="node s2" data-key="n17"><rect x="-412" y="-260" width="205" height="50" rx="25"/><text x="-310" y="-235">ingo-bewerbung</text></g>
+      <g class="node s2" data-key="n18"><rect x="-192" y="-260" width="205" height="50" rx="25"/><text x="-90" y="-235">workshop-konz.</text></g>
+      <g class="node s2" data-key="n19"><rect x="28" y="-260" width="205" height="50" rx="25"/><text x="130" y="-235">anleitung-verb.</text></g>
+      <g class="node s2" data-key="n20"><rect x="248" y="-260" width="205" height="50" rx="25"/><text x="350" y="-235">experten-gremium</text></g>
+      <g class="node s2" data-key="n21"><rect x="468" y="-260" width="205" height="50" rx="25"/><text x="570" y="-235">ki-projekt-roadmap</text></g>
+
+      <!-- Schicht 1 -->
+      <rect class="bandrect" x="-420" y="-160" width="1100" height="150" rx="20"/>
+      <g class="bandgroup" data-ziel="erzeuger" role="button" tabindex="0" aria-label="Schicht 1 Erzeuger: Erklärung öffnen">
+        <rect class="bandhit" x="-700" y="-124" width="270" height="62"/>
+        <text class="bandlabel" x="-690" y="-100">Schicht 1</text>
+        <text class="bandcount" x="-690" y="-74">Erzeuger · 8 Skills</text>
+      </g>
+      <g class="node s1" data-key="n09"><rect x="-407" y="-143" width="250" height="50" rx="25"/><text x="-282" y="-118">workbook</text></g>
+      <g class="node s1" data-key="n10"><rect x="-132" y="-143" width="250" height="50" rx="25"/><text x="-7" y="-118">ingo-dokumente</text></g>
+      <g class="node s1" data-key="n11"><rect x="143" y="-143" width="250" height="50" rx="25"/><text x="268" y="-118">firmen-brief</text></g>
+      <g class="node s1" data-key="n12"><rect x="418" y="-143" width="250" height="50" rx="25"/><text x="543" y="-118">seminar-handout</text></g>
+      <g class="node s1" data-key="n13"><rect x="-407" y="-77" width="250" height="50" rx="25"/><text x="-282" y="-52">vortrag-erstellen</text></g>
+      <g class="node s1" data-key="n14"><rect x="-132" y="-77" width="250" height="50" rx="25"/><text x="-7" y="-52">linkedin-beitrag</text></g>
+      <g class="node s1" data-key="n15"><rect x="143" y="-77" width="250" height="50" rx="25"/><text x="268" y="-52">ki-news-briefing</text></g>
+      <g class="node s1" data-key="n16"><rect x="418" y="-77" width="250" height="50" rx="25"/><text x="543" y="-52">zoom-praesentation</text></g>
+
+      <!-- Schicht 0 -->
+      <rect class="bandrect" x="-420" y="20" width="1100" height="150" rx="20"/>
+      <g class="bandgroup" data-ziel="fundament" role="button" tabindex="0" aria-label="Schicht 0 Fundament: Erklärung öffnen">
+        <rect class="bandhit" x="-700" y="56" width="270" height="62"/>
+        <text class="bandlabel" x="-690" y="80">Schicht 0</text>
+        <text class="bandcount" x="-690" y="106">Fundament · 8 Skills</text>
+      </g>
+      <g class="node s0 key" data-key="n01"><rect x="-407" y="37" width="250" height="50" rx="25"/><text x="-282" y="62">lernen-und-merken</text></g>
+      <g class="node s0" data-key="n02"><rect x="-132" y="37" width="250" height="50" rx="25"/><text x="-7" y="62">firmen-ci</text></g>
+      <g class="node s0" data-key="n03"><rect x="143" y="37" width="250" height="50" rx="25"/><text x="268" y="62">stil-und-ton</text></g>
+      <g class="node s0" data-key="n04"><rect x="418" y="37" width="250" height="50" rx="25"/><text x="543" y="62">recht-und-pflicht</text></g>
+      <g class="node s0" data-key="n05"><rect x="-407" y="103" width="250" height="50" rx="25"/><text x="-282" y="128">docx-ausgabe-regeln</text></g>
+      <g class="node s0" data-key="n06"><rect x="-132" y="103" width="250" height="50" rx="25"/><text x="-7" y="128">ki-bildgenerierung</text></g>
+      <g class="node s0" data-key="n07"><rect x="143" y="103" width="250" height="50" rx="25"/><text x="268" y="128">ki-glossar</text></g>
+      <g class="node s0" data-key="n08"><rect x="418" y="103" width="250" height="50" rx="25"/><text x="543" y="128">qualitaets-check</text></g>
+
+      <g class="wegweiser">
+        <rect class="wegweiser-flaeche" x="-700" y="196" width="1380" height="212" rx="24"/>
+
+        <text class="wegweiser-rubrik" x="-664" y="244">Was alle Skills verbindet</text>
+        <g class="bandgroup verbindet" data-ziel="kopfblock" role="button" tabindex="0" aria-label="Der gemeinsame Ausweis jedes Skills: Erklärung öffnen">
+          <rect class="verbindet-flaeche" x="-420" y="222" width="512" height="44" rx="22"/>
+          <text class="verbindet-text" x="-164" y="244">1 · Derselbe Ausweis →</text>
+        </g>
+        <g class="bandgroup verbindet zwei" data-ziel="ordner" role="button" tabindex="0" aria-label="Fester Ordner und eigenes Gedächtnis jedes Skills: Erklärung öffnen">
+          <rect class="verbindet-flaeche" x="132" y="222" width="512" height="44" rx="22"/>
+          <text class="verbindet-text" x="388" y="244">2 · Ordner und Gedächtnis →</text>
+        </g>
+
+        <text class="wegweiser-rubrik" x="-664" y="304">Vertiefung</text>
+        <g class="bandgroup verbindet drei" data-ziel="ablauf" role="button" tabindex="0" aria-label="Der Ablauf an einem echten Beispiel: Erklärung öffnen">
+          <rect class="verbindet-flaeche" x="-420" y="282" width="512" height="44" rx="22"/>
+          <text class="verbindet-text" x="-164" y="304">3 · Ablauf am Beispiel →</text>
+        </g>
+        <g class="bandgroup verbindet vier" data-ziel="kern" role="button" tabindex="0" aria-label="Kernaussage, Übertragung und Herkunft der Zahlen: Erklärung öffnen">
+          <rect class="verbindet-flaeche" x="132" y="282" width="512" height="44" rx="22"/>
+          <text class="verbindet-text" x="388" y="304">4 · Fazit und Herkunft →</text>
+        </g>
+
+        <line class="wegweiser-trenner" x1="-664" y1="350" x2="644" y2="350"/>
+        <text class="wegweiser-fuss" x="-664" y="378">Pfeile links: jede Ebene nutzt die Ebenen darunter. Klick auf einen Ebenennamen, einen Skill oder eine Schaltfläche öffnet die Erklärung.</text>
+      </g>
+    </svg>
+    <div class="map-legend">
+      <span class="l0">Fundament</span>
+      <span class="l1">Erzeuger</span>
+      <span class="l2">Workflow</span>
+      <span class="lm">Meta</span>
+      <span class="lk">Lerngedächtnis: von 23 der 24 Skills geladen</span>
+    </div>
+  </section>
+
+
+  <!-- 3 Rundgang Schicht 0 -->
+  <section id="tour-s0" class="step tour" data-x="330" data-y="380" data-scale="2.6" data-highlight="s0"></section>
+
+  <!-- 4 Fundament erklärt -->
+  <section id="fundament" class="step" data-x="1500" data-y="900" data-scale="1">
+    <div class="karte k0">
+      <div class="badge">Schicht 0<small>FUNDAMENT</small></div>
+      <h2>Fundament <em>8 Skills</em></h2>
+      <p class="def">Regelwerke ohne eigenes Produkt. Sie legen fest, wie etwas auszusehen, zu klingen und rechtlich beschaffen zu sein hat. Aufgerufen werden sie nie direkt, sondern von den Skills darüber geladen.</p>
+      <div class="cols">
+        <div><h3>Was hier liegt</h3><ul>
+          <li>Farben, Schrift, Kontraste</li>
+          <li>Tonalität und Anti-Floskel-Regeln</li>
+          <li>Pflichttexte und Anonymisierung</li>
+          <li>Verbindliche Fachbegriffe</li>
+        </ul></div>
+        <div><h3>Leitfragen</h3><ul>
+          <li>Gilt diese Regel für mehr als einen Skill?</li>
+          <li>Existiert sie schon woanders?</li>
+          <li>Wer muss bei Änderung nachziehen?</li>
+        </ul></div>
+      </div>
+      <p class="ohne"><strong>Ohne diese Ebene:</strong> Jeder Skill definiert Farben und Begriffe selbst. Genau daraus entstand die Redundanz, die den Umbau ausgelöst hat: dieselbe Regel an 12 Stellen, jedes Mal leicht anders.</p>
+    </div>
+  </section>
+
+  <!-- 5 lernen-und-merken -->
+  <section id="lernen" class="step" data-x="1500" data-y="1700" data-scale="1">
+    <div class="karte kk">
+      <div class="badge">Kern<small>LERNGEDÄCHTNIS</small></div>
+      <h2>lernen-und-merken <em>der zentrale Skill</em></h2>
+      <p class="def">Jeder Skill führt eine eigene Lerndatei. Vor jedem Lauf liest er sie, nach jedem Lauf ergänzt er sie, falls etwas schiefging oder besonders gut funktioniert hat.</p>
+      <div class="cols">
+        <div><h3>Der Ablauf</h3><ul>
+          <li>Vor dem Lauf: eigene Lerndatei lesen</li>
+          <li>Aufgabe wie gewohnt ausführen</li>
+          <li>Danach: Eintrag, falls lernwürdig</li>
+        </ul></div>
+        <div><h3>Die Regeln</h3><ul>
+          <li>Ein Eintrag je Sachverhalt</li>
+          <li>Konsequenz muss handlungsleitend sein</li>
+          <li>Unauffälliger Lauf: kein Eintrag</li>
+          <li>Keine personenbezogenen Daten</li>
+        </ul></div>
+      </div>
+      <pre>## 2026-09-04 · Erklärtafeln nicht in skalierte Steps legen
+**Typ:** Korrektur
+**Beobachtung:** Tafel wird mitskaliert und verdeckt die Landkarte.
+**Konsequenz:** Tafeln als position:fixed außerhalb der Leinwand einblenden.</pre>
+      <p class="ohne"><strong>Ohne ihn:</strong> Derselbe Fehler wiederholt sich bei jedem Lauf, weil kein Skill sich merken kann, was beim letzten Mal schiefging. Genau dieser Eintrag oben stammt aus dem ersten Lauf dieser Präsentation.</p>
+    </div>
+  </section>
+
+  <!-- 6 Rundgang Schicht 1 -->
+  <section id="tour-s1" class="step tour" data-x="330" data-y="-60" data-scale="2.6" data-highlight="s1"></section>
+
+  <!-- 7 Erzeuger erklärt -->
+  <section id="erzeuger" class="step" data-x="1500" data-y="-500" data-scale="1">
+    <div class="karte k1">
+      <div class="badge">Schicht 1<small>ERZEUGER</small></div>
+      <h2>Erzeuger <em>8 Skills</em></h2>
+      <p class="def">Diese Skills sprichst du direkt an. Jeder baut genau eine Art von Ergebnis und lädt sich die passenden Fundament-Skills dazu.</p>
+      <div class="cols">
+        <div><h3>Beispiele</h3><ul>
+          <li>Workbook mit Cover und Dramaturgie</li>
+          <li>Brief im eigenen Firmenlayout</li>
+          <li>Handout aus einem Transkript</li>
+          <li>Redemanuskript samt Präsentation</li>
+        </ul></div>
+        <div><h3>Erkennungsmerkmal</h3><ul>
+          <li>Baut das Ergebnis selbst</li>
+          <li>Ruft keinen anderen Erzeuger auf</li>
+          <li>Wird durch deinen Prompt ausgelöst</li>
+        </ul></div>
+      </div>
+      <p class="ohne"><strong>Ohne diese Ebene:</strong> Es gäbe nur Regeln und niemanden, der sie anwendet. Jedes Dokument müsste von Hand zusammengesetzt werden.</p>
+    </div>
+  </section>
+
+  <!-- 8 Rundgang Schicht 2 -->
+  <section id="tour-s2" class="step tour" data-x="330" data-y="-940" data-scale="2.6" data-highlight="s2"></section>
+
+  <!-- 9 Workflow erklärt -->
+  <section id="workflow" class="step" data-x="1500" data-y="-1300" data-scale="1">
+    <div class="karte k2">
+      <div class="badge">Schicht 2<small>WORKFLOW</small></div>
+      <h2>Workflow <em>5 Skills</em></h2>
+      <p class="def">Sie bauen nichts selbst, sondern führen Regie: mehrere Schritte nacheinander, oft mit einem Erzeuger aus Schicht 1 in der Mitte.</p>
+      <div class="cols">
+        <div><h3>Typischer Ablauf</h3><ul>
+          <li>Vorprüfung oder Recherche</li>
+          <li>Übergabe an einen Erzeuger</li>
+          <li>Nachbereitung, mehrere Ausgaben</li>
+        </ul></div>
+        <div><h3>Abgrenzung zu Schicht 1</h3><ul>
+          <li>Baut selbst → Schicht 1</li>
+          <li>Ruft andere auf → Schicht 2</li>
+        </ul></div>
+      </div>
+      <p class="ohne"><strong>Ohne diese Ebene:</strong> Mehrstufige Vorhaben wie eine Bewerbung oder ein Workshop-Konzept müssten in Einzelaufrufen zusammengestückelt werden, ohne festen Ablauf.</p>
+    </div>
+  </section>
+
+  <!-- 10 Rundgang Meta -->
+  <section id="tour-meta" class="step tour" data-x="330" data-y="-1420" data-scale="2.6" data-highlight="meta"></section>
+
+  <!-- 10b Meta erklärt -->
+  <section id="meta-karte" class="step" data-x="1500" data-y="-1900" data-scale="1">
+    <div class="karte km">
+      <div class="badge">Meta<small>WERKZEUG</small></div>
+      <h2>Meta und Werkzeug <em>3 Skills</em></h2>
+      <p class="def">Sie erzeugen kein Kundendokument, sondern halten das System selbst in Form: Bauanleitung für neue Skills, Prompt-Optimierung, Architektur-Register.</p>
+      <div class="cols">
+        <div><h3>Die drei Skills</h3><ul>
+          <li>skill-erstellen: Bauplan und Register</li>
+          <li>prompt-engineer: Prompts prüfen und schärfen</li>
+          <li>produkt-architektur: Datenmodell und Schnittstellen</li>
+        </ul></div>
+        <div><h3>Erkennungsmerkmal</h3><ul>
+          <li>Arbeitet an den Skills, nicht am Kundenergebnis</li>
+          <li>Kein Word-Dokument als Ausgabe</li>
+          <li>Wird bei Umbau und Wartung geladen</li>
+        </ul></div>
+      </div>
+      <p class="ohne"><strong>Ohne diese Ebene:</strong> Jeder neue Skill entstünde nach eigenem Muster. Nach zehn Skills wüsste niemand mehr, welche Regel wo gilt und wer bei einer Änderung nachziehen muss.</p>
+    </div>
+  </section>
+
+  <!-- 11 Der gemeinsame Kopfblock -->
+  <section id="kopfblock" class="step" data-x="-1500" data-y="-900" data-scale="1.2">
+    <div class="seite">
+      <span class="eyebrow">Innere Struktur, Teil 1</span>
+      <h2>Jeder Skill trägt denselben Ausweis</h2>
+      <p class="lead">Ob Fundament, Erzeuger, Workflow oder Werkzeug: der Kopf jeder Skill-Datei ist gleich aufgebaut. Erst das macht das Schichtenmodell überhaupt prüfbar.</p>
+      <pre>**Version 1.9 · 2026-09-05 · Schicht 0 (Fundament) · Lädt: lernen-und-merken**
+
+Changelog:
+- 1.9 (2026-09-05): was sich geändert hat und warum</pre>
+      <div class="grid2">
+        <div><h3>Die vier Pflichtangaben</h3><ul>
+          <li><strong>Version</strong> steigt bei jeder Änderung</li>
+          <li><strong>Datum</strong> zeigt den Stand</li>
+          <li><strong>Schicht</strong> ordnet ein</li>
+          <li><strong>Lädt</strong> nennt jede Abhängigkeit offen</li>
+        </ul></div>
+        <div><h3>Was der Changelog leistet</h3><ul>
+          <li>Jede Änderung mit Begründung</li>
+          <li>Auslöser wird mitgeschrieben</li>
+          <li>Rücknahme bleibt nachvollziehbar</li>
+        </ul></div>
+      </div>
+      <div class="zitat"><strong>Ohne diesen Ausweis:</strong> Niemand weiß, welcher Stand gilt, was ein Skill zieht und ob eine Änderung schon eingebaut ist. Eine Abhängigkeit, die nicht im Kopf steht, wird beim nächsten Umbau übersehen.</div>
+    </div>
+  </section>
+
+  <!-- 12 Ordner und Gedächtnis -->
+  <section id="ordner" class="step" data-x="-1500" data-y="-100" data-scale="1.2">
+    <div class="seite">
+      <span class="eyebrow">Innere Struktur, Teil 2</span>
+      <h2>Fester Ordner, eigenes Gedächtnis</h2>
+      <p class="lead">Jeder Skill hat denselben Aufbau auf der Festplatte. Wer einen Skill kennt, findet sich in jedem anderen zurecht.</p>
+      <pre>skill-name/
+├── SKILL.md                      Pflicht: Beschreibung, Kopfblock, Ablauf
+└── references/
+    └── lessons-learned.md        Pflicht: das eigene Lerngedächtnis
+    └── [fachliche Referenzdateien]</pre>
+      <div class="grid2">
+        <div><h3>Warum je Skill statt zentral</h3><ul>
+          <li>Die Lektion bleibt am Ort ihrer Wirkung</li>
+          <li>Kein unübersichtlicher Sammeltopf</li>
+          <li>Wird beim Kopieren des Skills mitgenommen</li>
+        </ul></div>
+        <div><h3>Wann eine Lektion zur Regel wird</h3><ul>
+          <li>Einmaliger Vorfall bleibt in der Lerndatei</li>
+          <li>Wiederkehrendes Muster wandert fest in die SKILL.md</li>
+          <li>Der Eintrag bleibt als Beleg stehen</li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 Regeln: Geburt und Gate -->
+  <section id="regeln" class="step" data-x="-1500" data-y="700" data-scale="1.2">
+    <div class="seite">
+      <span class="eyebrow">Die Regeln</span>
+      <h2>Nach Bauplan geboren, vor der Ausgabe geprüft</h2>
+      <p class="lead">2 Skills klammern den Lebenszyklus: einer sorgt für den korrekten Start, einer für die Qualität am Ende.</p>
+      <div class="grid2">
+        <div><h3>skill-erstellen (Geburt)</h3><ul>
+          <li>Richtige Schicht zuweisen</li>
+          <li>Vollständigen Kopfblock anlegen</li>
+          <li>Lerndatei leer anlegen</li>
+          <li>Versionierung ab 1.0</li>
+          <li>Hält das verbindliche Register</li>
+        </ul></div>
+        <div><h3>qualitaets-check (Ausgabe)</h3><ul>
+          <li>Ausgaberegeln durchlaufen</li>
+          <li>Prüfskript ohne FAIL</li>
+          <li>Warnungen bewusst entschieden</li>
+          <li>Sichtprüfung gerendert</li>
+          <li>CI aus dem Fundament, nicht hart kodiert</li>
+          <li>Lessons-learned-Reflexion</li>
+        </ul></div>
+      </div>
+      <div class="zitat"><strong>Warum der letzte Punkt nicht blockiert:</strong> Ein unauffälliger Lauf soll ausdrücklich keinen Eintrag erzeugen, sonst verliert die Lerndatei ihren Wert. Außerdem ist die Frage, ob etwas Lernwürdiges passiert ist, eine Selbstauskunft, die von außen niemand prüfen kann. Der Punkt erzwingt das Innehalten, nicht den Eintrag.</div>
+    </div>
+  </section>
+
+  <!-- 14 Ablauf: Einleitung -->
+  <section id="ablauf" class="step" data-x="3400" data-y="-1200" data-scale="1.3" data-rotate="3">
+    <div class="seite">
+      <span class="eyebrow">Der Ablauf an einem echten Beispiel</span>
+      <h2>„Erstelle mir ein Workbook zur Seminarreihe Change Management."</h2>
+      <p class="lead">Ein einziger Satz. Was danach passiert, zeigt das Zusammenspiel der Ebenen besser als jede Beschreibung. 5 Schritte, 7 beteiligte Skills, davon sechs unsichtbar.</p>
+      <ul class="check">
+        <li>Schritt 1: Erkennen und starten</li>
+        <li class="o">Schritt 2: Gedächtnis lesen</li>
+        <li>Schritt 3: Regeln laden</li>
+        <li>Schritt 4: Bauen und formatieren</li>
+        <li class="o">Schritt 5: Gate und Rückblick</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 15 Schritt 1 -->
+  <section id="fluss1" class="step" data-x="3400" data-y="-400" data-scale="1">
+    <div class="karte k1">
+      <div class="badge">Schritt 1<small>SCHICHT 1</small></div>
+      <h2>Erkennen und starten <em>workbook</em></h2>
+      <p class="def">Der Prompt trifft die Beschreibung dieses Erzeuger-Skills. Er übernimmt die Regie und weiß, was ein Workbook ausmacht: Buchcover, Kapitel-Dramaturgie, Prompt-Boxen, Reflexion, FAQ, Glossar, Fazit.</p>
+      <p class="ohne"><strong>Ohne ihn:</strong> Ein generisches Dokument ohne Dramaturgie und ohne Wiedererkennungswert. Die Struktur müsste bei jedem Workbook neu erfunden werden.</p>
+    </div>
+  </section>
+
+  <!-- 16 Schritt 2 -->
+  <section id="fluss2" class="step" data-x="3400" data-y="200" data-scale="1">
+    <div class="karte kk">
+      <div class="badge">Schritt 2<small>SCHICHT 0</small></div>
+      <h2>Gedächtnis lesen <em>lernen-und-merken</em></h2>
+      <p class="def">Noch vor dem ersten inhaltlichen Schritt liest der Skill seine eigene Lerndatei und wendet frühere Erkenntnisse an, ohne sie im Ergebnis zu erwähnen.</p>
+      <p class="ohne"><strong>Ohne ihn:</strong> Derselbe Fehler wie beim letzten Workbook. Eine Korrektur, die du vor drei Wochen angemerkt hast, wäre wirkungslos verpufft.</p>
+    </div>
+  </section>
+
+  <!-- 17 Schritt 3 -->
+  <section id="fluss3" class="step" data-x="3400" data-y="800" data-scale="1">
+    <div class="karte k0">
+      <div class="badge">Schritt 3<small>SCHICHT 0</small></div>
+      <h2>Regeln laden <em>fünf Fundament-Skills</em></h2>
+      <p class="def">Farben und Schrift, Tonalität, Pflichttexte, verbindliche Fachbegriffe, Bildregeln. Alles aus je einer Quelle, nichts lokal definiert.</p>
+      <div class="cols">
+        <div><h3>Geladen wird</h3><ul>
+          <li>firmen-ci</li>
+          <li>stil-und-ton</li>
+          <li>recht-und-pflicht</li>
+        </ul></div>
+        <div><h3>Und ergänzend</h3><ul>
+          <li>ki-glossar</li>
+          <li>ki-bildgenerierung</li>
+        </ul></div>
+      </div>
+      <p class="ohne"><strong>Ohne sie:</strong> Jedes Workbook erfindet Farben und Begriffe neu. Ein alter Markenname bleibt an einer Stelle stehen, während er überall sonst schon ersetzt wurde.</p>
+    </div>
+  </section>
+
+  <!-- 18 Schritt 4 -->
+  <section id="fluss4" class="step" data-x="3400" data-y="1400" data-scale="1">
+    <div class="karte k0">
+      <div class="badge">Schritt 4<small>SCHICHT 0</small></div>
+      <h2>Bauen und formatieren <em>docx-ausgabe-regeln</em></h2>
+      <p class="def">Seitenumbrüche, Abschnittswechsel, benannte Formatvorlagen, echte Umlaute. Die technischen Regeln, die für jedes Word-Dokument gelten, unabhängig vom Inhalt.</p>
+      <p class="ohne"><strong>Ohne sie:</strong> Kaputte Aufzählungen, beim Öffnen springt die Schrift auf einen Standardwert, Umlaute erscheinen als ae und oe.</p>
+    </div>
+  </section>
+
+  <!-- 19 Schritt 5 -->
+  <section id="fluss5" class="step" data-x="3400" data-y="2000" data-scale="1">
+    <div class="karte kk">
+      <div class="badge">Schritt 5<small>GATE</small></div>
+      <h2>Gate und Rückblick <em>qualitaets-check → lernen-und-merken</em></h2>
+      <p class="def">Die Definition-of-Done wird geprüft. Bei FAIL geht es zurück in die Korrektur, nicht in die Ausgabe. Danach die Rückfrage an sich selbst: War in diesem Lauf etwas lernwürdig?</p>
+      <p class="ohne"><strong>Ohne es:</strong> Fehler gehen raus und wiederholen sich. Das Lerngedächtnis erscheint hier zum zweiten Mal, einmal vor dem Lauf zum Lesen, einmal danach zum Schreiben. Diese Klammer ist der Unterschied zwischen einer festen Architektur und einem lernenden System.</p>
+    </div>
+  </section>
+
+  <!-- 20 Zusammenspiel -->
+  <section id="zusammenspiel" class="step tour" data-x="330" data-y="-560" data-scale="4" data-highlight="all"></section>
+
+  <!-- 21 Kernaussage -->
+  <section id="kern" class="step" data-x="-3200" data-y="0" data-scale="1.5" data-rotate="-3">
+    <div class="seite">
+      <span class="eyebrow">Kernaussage</span>
+      <h2>Nicht was ein Skill tut, sondern wie er lebt</h2>
+      <p class="lead">Das Besondere ist nicht, dass es 24 Skills gibt. Es ist, dass jeder davon versioniert ist, einer einzigen Wahrheit pro Regelbereich folgt, nach fester Bauanleitung entsteht, vor der Ausgabe geprüft wird und aus dem eigenen Verlauf lernt.</p>
+      <div class="grid2">
+        <div><h3>Die Zahl dazu</h3><ul>
+          <li>23 von 24 Skills laden das Lerngedächtnis</li>
+          <li>Kein anderes Fundament kommt über 13</li>
+          <li>Die Ausnahme ist der Lern-Skill selbst</li>
+        </ul></div>
+        <div><h3>Warum diese Zahl zählt</h3><ul>
+          <li>Alle anderen Regeln sind fachlich begrenzt</li>
+          <li>Lernen gilt unabhängig vom Fachgebiet</li>
+          <li>Deshalb ist es die einzige universelle Regel</li>
+        </ul></div>
+      </div>
+      <div class="zitat">Für ein Unternehmen gilt dasselbe: Meistens ist nicht die Checkliste das Problem, sondern dass niemand sie nach einem Vorfall aktualisiert. Ein Prozess, der sich nicht selbst korrigiert, wiederholt seinen Fehler, bis ihn zufällig jemand bemerkt.</div>
+    </div>
+  </section>
+
+  <!-- 22 Anwendung -->
+  <section id="anwendung" class="step" data-x="-3200" data-y="1100" data-scale="1.4" data-rotate="4">
+    <div class="seite">
+      <span class="eyebrow">Übertragung</span>
+      <h2>Was davon auf eure Prozesse passt</h2>
+      <p class="lead">Die Mechanik braucht kein KI-System. Sie braucht eine Entscheidung und eine Datei.</p>
+      <ul class="check">
+        <li>Jede Regel existiert genau einmal</li>
+        <li class="o">Jede Änderung bekommt eine Version</li>
+        <li>Abhängigkeiten stehen offen im Kopf</li>
+        <li class="o">Vor dem Start: was wissen wir schon?</li>
+        <li>Vor der Ausgabe: feste Prüfliste</li>
+        <li class="o">Nach dem Lauf: was war lernwürdig?</li>
+      </ul>
+      <div class="zitat">Der Aufwand dafür: eine Textdatei je Prozess, ein festes Eintragsformat, eine Regel. Schreib auf, was du gelernt hast, bevor du das Ergebnis ausgibst.</div>
+    </div>
+  </section>
+
+  <!-- 23 Herkunft -->
+  <section id="quellen" class="step" data-x="-3200" data-y="2100" data-scale="1.4" data-rotate="-2">
+    <div class="seite">
+      <span class="eyebrow">Herkunft und Stand</span>
+      <h2>Woher die Zahlen stammen</h2>
+      <p class="lead">Alle Angaben in dieser Präsentation stammen aus dem Skill-Bestand selbst, ausgezählt am 5. September 2026.</p>
+      <div class="grid2">
+        <div><h3>Ausgezählt</h3><ul>
+          <li>24 Skills insgesamt</li>
+          <li>8 Fundament, 8 Erzeuger, 5 Workflow, 3 Meta</li>
+          <li>23 laden lernen-und-merken</li>
+        </ul></div>
+        <div><h3>Verlauf</h3><ul>
+          <li>Juli 2026: 12 Skills, Redundanz-Umbau</li>
+          <li>3. September 2026: lernen-und-merken 1.0</li>
+          <li>5. September 2026: Nachrüstung aller Skills</li>
+        </ul></div>
+      </div>
+      <p class="quellen">Grundlage sind die Kopfblöcke der Skill-Dateien und das verbindliche Register in <strong>skill-erstellen</strong>, Abschnitt 2. Die Zählung „geladen von" beruht auf den Lädt-Angaben der Kopfblöcke.<br>
+      Zoom-Technik: impress.js, <a href="https://github.com/impress/impress.js">https://github.com/impress/impress.js</a></p>
+    </div>
+  </section>
+
+</div>
+
+
+  <aside id="tafel-s0" class="tafel" aria-live="polite">
+    <span class="eyebrow">Rundgang 1</span>
+    <h2>Schicht 0: Fundament</h2>
+    <p>8 reine Regelwerke. Sie erzeugen nichts und werden nie direkt aufgerufen. Andere Skills laden sie im Hintergrund.</p>
+    <p>Jede Regel existiert genau einmal. Ändert sich die CI-Farbe hier, wirkt das überall.</p>
+    <div class="chips"><span class="chip">Single Source of Truth</span></div>
+  </aside>
+  <aside id="tafel-s1" class="tafel" aria-live="polite">
+    <span class="eyebrow">Rundgang 2</span>
+    <h2>Schicht 1: Erzeuger</h2>
+    <p>8 Skills, die ein konkretes Dokument bauen: Workbook, Brief, Handout, Vortrag, Post, Briefing, Zoom-Präsentation.</p>
+    <p>Sie holen sich Design, Sprache und Recht aus Schicht 0, statt es selbst festzulegen.</p>
+    <div class="chips"><span class="chip">Du rufst sie direkt auf</span></div>
+  </aside>
+  <aside id="tafel-s2" class="tafel t2" aria-live="polite">
+    <span class="eyebrow">Rundgang 3</span>
+    <h2>Schicht 2: Workflow</h2>
+    <p>5 Skills, die selbst nichts bauen. Sie orchestrieren mehrere Schritte oder rufen einen Erzeuger aus Schicht 1 auf.</p>
+    <p>Beispiel Bewerbung: erst Eignungscheck, dann Übergabe an den Brief-Erzeuger, dann zwei Ausgaben.</p>
+    <div class="chips"><span class="chip">Regie statt Handwerk</span></div>
+  </aside>
+  <aside id="tafel-meta" class="tafel tm" aria-live="polite">
+    <span class="eyebrow">Rundgang 4</span>
+    <h2>Meta und Werkzeug</h2>
+    <p>3 Skills über die Skills: Bauanleitung für neue Skills, Prompt-Optimierung, Architektur-Register.</p>
+    <p>Sie erzeugen kein Kundendokument, sondern halten das System selbst in Form.</p>
+    <div class="chips"><span class="chip">Wartung und Governance</span></div>
+    <span class="mehr">Weiter für die ausführliche Karte</span>
+  </aside>
+  <aside id="tafel-all" class="tafel tall" aria-live="polite">
+    <span class="eyebrow">Zusammenspiel</span>
+    <h2>Was alle verbindet</h2>
+    <p>Jeder Skill trägt denselben Kopfblock, denselben Ordneraufbau und ein eigenes Lerngedächtnis.</p>
+    <p>Erst das macht aus 24 Einzelteilen ein System, das sich selbst korrigiert.</p>
+    <div class="chips"><span class="chip">23 von 24 laden das Lerngedächtnis</span></div>
+  </aside>
+
+<div class="hud">
+  <span class="brand">Ingo Günther <span>·</span> Skill-Architektur</span>
+  <div class="toolbar-wrap" id="leiste"></div>
+</div>
+
+<script src="vendor/impress.min.js"></script>
+<script>
+(function () {
+  var root = document.getElementById('impress');
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    root.setAttribute('data-transition-duration', '0');
+  }
+  if (typeof window.impress !== 'function') {
+    document.body.classList.add('impress-not-supported');
+    return;
+  }
+  var api = impress();
+  api.init();
+
+  var hl = ['hl-s0', 'hl-s1', 'hl-s2', 'hl-meta', 'hl-all'];
+  function applyHighlight(step) {
+    hl.forEach(function (c) { document.body.classList.remove(c); });
+    var h = step && step.getAttribute('data-highlight');
+    if (h && h !== 'none') document.body.classList.add('hl-' + h);
+  }
+  root.addEventListener('impress:stepenter', function (e) { applyHighlight(e.target); });
+
+  // Klick auf die Titelseite führt zur Landkarte
+  var titel = document.getElementById('titel');
+  titel.setAttribute('role', 'button');
+  titel.setAttribute('tabindex', '0');
+  titel.setAttribute('aria-label', 'Weiter zur Erklärung, was ein Skill ist');
+  titel.addEventListener('click', function (ev) {
+    if (ev.target.closest('a')) return;
+    // impress.js selbst springt bei Klick zum angeklickten Schritt zurück, deshalb hier stoppen
+    ev.stopPropagation();
+    api.goto('was-ist-ein-skill');
+  });
+  titel.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); api.goto('was-ist-ein-skill'); }
+  });
+
+  var map = {
+    n01: 'lernen',   n02: 'fundament', n03: 'fundament', n04: 'fundament',
+    n05: 'fundament', n06: 'fundament', n07: 'fundament', n08: 'regeln',
+    n09: 'fluss1',   n10: 'erzeuger', n11: 'erzeuger', n12: 'erzeuger',
+    n13: 'erzeuger', n14: 'erzeuger', n15: 'erzeuger', n16: 'erzeuger',
+    n17: 'workflow', n18: 'workflow', n19: 'workflow', n20: 'workflow',
+    n21: 'workflow', n22: 'regeln',   n23: 'meta-karte', n24: 'meta-karte'
+  };
+
+  document.querySelectorAll('#ueberblick .node').forEach(function (n) {
+    var key = n.getAttribute('data-key');
+    var target = map[key];
+    var label = n.querySelector('text').textContent.trim();
+    if (!target) return;
+    n.style.cursor = 'pointer';
+    n.setAttribute('tabindex', '0');
+    n.setAttribute('role', 'button');
+    n.setAttribute('aria-label', label + ': Erklärung öffnen');
+    n.addEventListener('click', function (ev) { ev.stopPropagation(); api.goto(target); });
+    n.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); api.goto(target); }
+    });
+  });
+
+  document.querySelectorAll('#ueberblick .bandgroup').forEach(function (g) {
+    var ziel = g.getAttribute('data-ziel');
+    if (!ziel) return;
+    g.addEventListener('click', function (ev) { ev.stopPropagation(); api.goto(ziel); });
+    g.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); api.goto(ziel); }
+    });
+  });
+
+  // Hell- und Dunkelmodus umschalten
+  function systemDunkel() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function aktivesTheme() {
+    var gesetzt = document.documentElement.getAttribute('data-theme');
+    if (gesetzt) return gesetzt;
+    return systemDunkel() ? 'dark' : 'light';
+  }
+  function themeLabel() {
+    return aktivesTheme() === 'dark' ? 'Hell' : 'Dunkel';
+  }
+  function themeSchalter() {
+    var neuesTheme = aktivesTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', neuesTheme);
+    try { window.localStorage.setItem('skillkarte-theme', neuesTheme); } catch (e) {}
+    var btn = document.getElementById('theme-schalter');
+    if (btn) {
+      btn.textContent = themeLabel();
+      btn.setAttribute('aria-label', neuesTheme === 'dark'
+        ? 'Zur hellen Darstellung wechseln' : 'Zur dunklen Darstellung wechseln');
+    }
+  }
+  try {
+    var gemerkt = window.localStorage.getItem('skillkarte-theme');
+    if (gemerkt === 'dark' || gemerkt === 'light') {
+      document.documentElement.setAttribute('data-theme', gemerkt);
+    }
+  } catch (e) {}
+
+  var bar = document.getElementById("leiste");
+  if (bar && !bar.children.length) {
+    [['Überblick', function () { api.goto('ueberblick'); }],
+     ['Was alle verbindet', function () { api.goto('kopfblock'); }],
+     [themeLabel(), themeSchalter],
+     ['Zurück', function () { api.prev(); }],
+     ['Weiter', function () { api.next(); }]].forEach(function (b) {
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.textContent = b[0]; btn.addEventListener('click', b[1]);
+      if (b[0] === 'Was alle verbindet') btn.classList.add('betont');
+      if (b[1] === themeSchalter) btn.id = 'theme-schalter';
+      bar.appendChild(btn);
+    });
+  }
+})();
+</script>
+</body></html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schieberegler Fehlermatrix</title>
+<!--
+  Baustein: Schieberegler zur Fehlermatrix (Spam-Filter, 100 Mails).
+  Tasten: ← → Schwelle, 1 Genauigkeit, 2 Präzision, 3 Sensitivität, 0 Markierung aus.
+-->
+<style>
+:root{
+  --leit:#1B3A5F; --akzent:#F08223; --text:#1A1A1A; --text2:#4A4A4A; --text3:#6B7280;
+  --linie:#D1D5DB; --hell:#E8EEF5; --grau:#F3F4F6;
+  --ok:#2E7D32; --ok-hell:#E3F1E4; --fehler:#B3261E; --fehler-hell:#FBE4E2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#F2F2F2;font-family:Arimo,Arial,sans-serif;color:var(--text);overflow:hidden}
+#huelle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#buehne{width:1600px;height:900px;background:#fff;position:relative;transform-origin:center center;display:flex;flex-direction:column;flex-shrink:0}
+#banner{height:64px;background:var(--leit);color:#fff;display:flex;align-items:center;padding:0 40px;font-size:22px;font-weight:700;border-bottom:6px solid var(--akzent)}
+#banner span{font-weight:400;opacity:.85;margin-left:16px;font-size:20px}
+body.rahmen-aus #banner, body.rahmen-aus #fuss{display:none}
+body.rahmen-aus{background:#fff}
+#fuss{height:40px;display:flex;align-items:center;padding:0 40px;font-size:15px;color:var(--text3);border-top:1px solid var(--linie)}
+#inhalt{flex:1;display:grid;grid-template-columns:1000px 1fr;grid-template-rows:auto 1fr;gap:28px 40px;padding:28px 40px 24px;min-height:0}
+.links{display:flex;flex-direction:column;min-height:0}
+.ordner-reihe{flex:1}
+
+/* Regler */
+.regler{grid-column:1 / -1;display:flex;align-items:center;gap:22px;background:var(--hell);border-radius:10px;padding:16px 26px}
+.regler label{font-size:22px;color:var(--leit);white-space:nowrap}
+.regler .frage{font-size:20px;color:var(--text2);white-space:nowrap}
+.regler input[type=range]{flex:1;height:44px;accent-color:var(--leit);cursor:pointer}
+.regler .wert{font-size:30px;font-weight:700;color:var(--leit);min-width:96px;text-align:right;font-variant-numeric:tabular-nums}
+.regler .pol{font-size:18px;color:var(--text3);white-space:nowrap}
+
+/* Ordner */
+.ordner-reihe{display:grid;grid-template-columns:1fr 1fr;gap:26px;min-height:0}
+.ordner{border:2px solid var(--leit);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;min-height:0}
+.ordner h3{font-size:24px;color:var(--leit);display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.ordner h3 small{font-size:18px;color:var(--text2);font-weight:400}
+.ordner .sub{font-size:16px;color:var(--text3);margin-bottom:12px}
+.ordner.spam{border-top:8px solid var(--akzent)}
+.gitter{display:grid;grid-template-columns:repeat(10,40px);gap:5px;align-content:start}
+.mail{position:relative;width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;transition:opacity .25s}
+.mail.ist-spam{background:var(--leit);color:#fff}
+.mail.ist-echt{background:#fff;border:2px solid var(--leit);color:var(--leit)}
+.mail.falsch{box-shadow:0 0 0 3px var(--fehler)}
+.mail.falsch.ist-echt{background:var(--fehler-hell);border-color:var(--fehler)}
+.mail.falsch::after{content:"✕";position:absolute;right:-7px;top:-8px;width:19px;height:19px;border-radius:50%;background:var(--fehler);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+.legende{display:flex;gap:28px;flex-wrap:wrap;font-size:18px;color:var(--text2);margin-top:14px;align-items:center}
+.legende i{position:relative;display:inline-flex;width:24px;height:24px;border-radius:5px;vertical-align:-6px;margin-right:8px;align-items:center;justify-content:center;font-style:normal;font-size:13px;font-weight:700}
+
+/* Matrix und Kennzahlen */
+.rechts{display:flex;flex-direction:column;gap:16px;min-height:0}
+.matrix{display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;font-size:16px}
+.mk{color:var(--text3);text-align:center;line-height:1.3;font-size:16px;align-self:center}
+.mk b{color:var(--leit)}
+.feld{border-radius:10px;padding:14px 6px;text-align:center;border:3px solid transparent;transition:opacity .25s,border-color .25s}
+.feld .n{font-size:44px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.feld .l{font-size:15px;margin-top:2px}
+.feld .k{font-size:13px;opacity:.8}
+.feld.ok{background:var(--ok-hell);color:#1E5A22}
+.feld.bad{background:var(--fehler-hell);color:#8A1C16}
+.dim{opacity:.22}
+.oben{border-color:var(--leit) !important}
+.unten{border-color:var(--text3) !important;border-style:dashed !important}
+
+.kennzahlen{display:flex;flex-direction:column;gap:12px;flex:1;justify-content:center}
+.kz{display:grid;grid-template-columns:180px 1fr 110px;align-items:center;gap:12px;padding:8px 10px;border-radius:8px;cursor:pointer;border:2px solid transparent;background:none;font:inherit;color:inherit;text-align:left}
+.kz:hover{background:var(--grau)}
+.kz.an{border-color:var(--leit);background:var(--hell)}
+.kz .name{font-size:19px;font-weight:700;color:var(--leit);line-height:1.15}
+.kz .name small{display:block;font-size:14px;font-weight:400;color:var(--text3)}
+.balken{height:24px;background:var(--grau);border-radius:12px;overflow:hidden}
+.balken div{height:100%;background:var(--leit);border-radius:12px;transition:width .35s}
+.kz.an .balken div{background:var(--akzent)}
+.kz .pz{white-space:nowrap;font-size:26px;font-weight:700;color:var(--leit);text-align:right;font-variant-numeric:tabular-nums}
+.erkl{background:var(--grau);border-left:6px solid var(--akzent);padding:12px 16px;min-height:84px}
+.erkl .q{font-size:19px;font-weight:700;color:var(--leit)}
+.erkl .f{font-size:17px;color:var(--text2);margin-top:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div id="huelle"><div id="buehne">
+  <div id="banner">Ingo Günther <span>Fehlermatrix zum Ausprobieren</span></div>
+  <main id="inhalt">
+    <h1 class="sr">Schieberegler zur Fehlermatrix: 100 E-Mails, 50 Spam und 50 echte Mails, ein Filter mit einstellbarer Schwelle</h1>
+
+    <div class="regler">
+      <label for="schwelle">Schwelle</label>
+      <span class="pol">locker</span>
+      <input type="range" id="schwelle" min="1" max="9" step="1" value="5" aria-describedby="regler-frage">
+      <span class="pol">streng</span>
+      <span class="wert" id="schwelle-wert">50 %</span>
+      <span class="frage" id="regler-frage">Spam-Ordner erst ab dieser Spam-Wahrscheinlichkeit</span>
+    </div>
+
+    <section class="links" aria-label="Die 100 Mails nach dem Sortieren">
+      <div class="ordner-reihe">
+        <div class="ordner spam">
+          <h3>Spam-Ordner <small id="anz-spam">45 Mails</small></h3>
+          <div class="sub">Hier hat der Filter Alarm geschlagen</div>
+          <div class="gitter" id="g-spam"></div>
+        </div>
+        <div class="ordner">
+          <h3>Posteingang <small id="anz-ein">55 Mails</small></h3>
+          <div class="sub">Hier hat der Filter durchgelassen</div>
+          <div class="gitter" id="g-ein"></div>
+        </div>
+      </div>
+      <div class="legende">
+        <span><i style="background:var(--leit);color:#fff">S</i>Spam</span>
+        <span><i style="background:#fff;border:2px solid var(--leit);color:var(--leit)">E</i>echte Mail</span>
+        <span><i style="background:var(--fehler);color:#fff;border-radius:50%">✕</i>im falschen Ordner</span>
+      </div>
+    </section>
+
+    <section class="rechts" aria-label="Fehlermatrix und Kennzahlen">
+      <div class="matrix" role="table" aria-label="Fehlermatrix">
+        <div></div>
+        <div class="mk" role="columnheader">Filter sagt<br><b>Spam</b></div>
+        <div class="mk" role="columnheader">Filter sagt<br><b>kein Spam</b></div>
+        <div class="mk" role="rowheader">In Wahrheit<br><b>Spam</b></div>
+        <div class="feld ok" id="f-tp" role="cell"><div class="n" id="n-tp">40</div><div class="l">richtig erkannt</div><div class="k">TP</div></div>
+        <div class="feld bad" id="f-fn" role="cell"><div class="n" id="n-fn">10</div><div class="l">übersehen</div><div class="k">FN</div></div>
+        <div class="mk" role="rowheader">In Wahrheit<br><b>echte Mail</b></div>
+        <div class="feld bad" id="f-fp" role="cell"><div class="n" id="n-fp">5</div><div class="l">Fehlalarm</div><div class="k">FP</div></div>
+        <div class="feld ok" id="f-tn" role="cell"><div class="n" id="n-tn">45</div><div class="l">richtig durchgelassen</div><div class="k">TN</div></div>
+      </div>
+
+      <div class="kennzahlen">
+        <button class="kz acc" data-m="acc"><span class="name">Genauigkeit<small>Accuracy · Taste 1</small></span><span class="balken"><div id="b-acc"></div></span><span class="pz" id="p-acc">85 %</span></button>
+        <button class="kz pre" data-m="pre"><span class="name">Präzision<small>Precision · Taste 2</small></span><span class="balken"><div id="b-pre"></div></span><span class="pz" id="p-pre">89 %</span></button>
+        <button class="kz rec" data-m="rec"><span class="name">Sensitivität<small>Recall · Taste 3</small></span><span class="balken"><div id="b-rec"></div></span><span class="pz" id="p-rec">80 %</span></button>
+      </div>
+
+      <div class="erkl" aria-live="polite">
+        <div class="q" id="e-q">Eine Kennzahl anklicken</div>
+        <div class="f" id="e-f">Dann zeigt die Matrix, welche Felder in die Rechnung eingehen.</div>
+      </div>
+    </section>
+  </main>
+  <div id="fuss">Ingo Günther · Beispiel mit erfundenen Zahlen: 100 E-Mails, davon 50 Spam</div>
+</div></div>
+
+<script>
+const Q = new URLSearchParams(location.search);
+if (Q.get("rahmen") === "aus") document.body.classList.add("rahmen-aus");
+const WEITER = Q.get("tasten") === "weiter";
+
+/* Erfundenes Beispiel: je Schwelle (10 % bis 90 %) richtig erkannter Spam und Fehlalarme. */
+const TP = [49, 49, 46, 43, 40, 39, 33, 26, 18];
+const FP = [22, 15, 10, 7, 5, 1, 1, 0, 0];
+const $ = s => document.querySelector(s);
+let modus = null, v = {};
+
+function pct(x){ return isFinite(x) ? (Math.round(x * 1000) / 10).toLocaleString("de-DE") + "\u00a0%" : "–"; }
+
+function mail(spam, falsch){
+  const d = document.createElement("div");
+  d.className = "mail " + (spam ? "ist-spam" : "ist-echt") + (falsch ? " falsch" : "");
+  d.dataset.rolle = spam ? (falsch ? "fn" : "tp") : (falsch ? "fp" : "tn");
+  d.innerHTML = `<span class="s">${spam ? "S" : "E"}</span>`;
+  d.setAttribute("aria-hidden", "true");
+  return d;
+}
+
+function rechnen(){
+  const i = +$("#schwelle").value - 1;
+  v.tp = TP[i]; v.fp = FP[i]; v.fn = 50 - v.tp; v.tn = 50 - v.fp;
+  v.acc = (v.tp + v.tn) / 100; v.pre = v.tp / (v.tp + v.fp); v.rec = v.tp / (v.tp + v.fn);
+  $("#schwelle-wert").textContent = (i + 1) * 10 + " %";
+  ["tp","fp","fn","tn"].forEach(k => $("#n-" + k).textContent = v[k]);
+  ["acc","pre","rec"].forEach(k => { $("#p-" + k).textContent = pct(v[k]); $("#b-" + k).style.width = Math.round(v[k] * 100) + "%"; });
+  $("#anz-spam").textContent = (v.tp + v.fp) + " Mails";
+  $("#anz-ein").textContent = (v.fn + v.tn) + " Mails";
+  const gs = $("#g-spam"), ge = $("#g-ein");
+  gs.replaceChildren(); ge.replaceChildren();
+  for (let k = 0; k < v.tp; k++) gs.append(mail(true, false));
+  for (let k = 0; k < v.fp; k++) gs.append(mail(false, true));
+  for (let k = 0; k < v.fn; k++) ge.append(mail(true, true));
+  for (let k = 0; k < v.tn; k++) ge.append(mail(false, false));
+  $("#schwelle").setAttribute("aria-valuetext",
+    `Schwelle ${(i + 1) * 10} Prozent: Genauigkeit ${pct(v.acc)}, Präzision ${pct(v.pre)}, Sensitivität ${pct(v.rec)}`);
+  zeigen();
+}
+
+const D = {
+  acc: { q: "Genauigkeit: Alle richtigen Zuordnungen zählen, egal in welchem Ordner.", oben: ["tp","tn"], unten: ["fp","fn"],
+         f: () => `(TP + TN) ÷ alle = (${v.tp} + ${v.tn}) ÷ 100 = ${pct(v.acc)}` },
+  pre: { q: "Präzision: Möglichst wenige Fehlalarme. Dafür darf Spam durchrutschen. Nachzählen im Spam-Ordner.", oben: ["tp"], unten: ["fp"],
+         f: () => `TP ÷ (TP + FP) = ${v.tp} ÷ ${v.tp + v.fp} = ${pct(v.pre)}` },
+  rec: { q: "Sensitivität: Möglichst allen Spam finden. Dafür gibt es mehr Fehlalarme. Nachzählen bei allem Spam.", oben: ["tp"], unten: ["fn"],
+         f: () => `TP ÷ (TP + FN) = ${v.tp} ÷ ${v.tp + v.fn} = ${pct(v.rec)}` }
+};
+
+function zeigen(){
+  document.querySelectorAll(".kz").forEach(b => { b.classList.toggle("an", b.dataset.m === modus); b.setAttribute("aria-pressed", b.dataset.m === modus); });
+  ["tp","fp","fn","tn"].forEach(k => {
+    const e = $("#f-" + k); e.classList.remove("dim","oben","unten");
+    if (modus){ const d = D[modus]; e.classList.add(d.oben.includes(k) ? "oben" : d.unten.includes(k) ? "unten" : "dim"); }
+  });
+  document.querySelectorAll(".mail").forEach(m => {
+    m.classList.toggle("dim", !!modus && !D[modus].oben.includes(m.dataset.rolle) && !D[modus].unten.includes(m.dataset.rolle));
+  });
+  if (modus){ $("#e-q").textContent = D[modus].q; $("#e-f").textContent = D[modus].f(); }
+  else { $("#e-q").textContent = "Eine Kennzahl anklicken"; $("#e-f").textContent = "Dann zeigt die Matrix, welche Felder in die Rechnung eingehen."; }
+}
+
+document.querySelectorAll(".kz").forEach(b => b.addEventListener("click", () => { modus = modus === b.dataset.m ? null : b.dataset.m; zeigen(); }));
+$("#schwelle").addEventListener("input", rechnen);
+
+/* Eigene Tasten: ← → Schwelle (auch ohne Fokus auf dem Regler), 1 2 3 Kennzahl, 0 aus.
+   Alle anderen Tasten gehen bei ?tasten=weiter an den Rundgang. */
+addEventListener("keydown", ev => {
+  const r = $("#schwelle");
+  if (ev.key === "ArrowLeft" || ev.key === "ArrowRight"){
+    if (document.activeElement !== r){ r.value = +r.value + (ev.key === "ArrowRight" ? 1 : -1); rechnen(); ev.preventDefault(); }
+    return;
+  }
+  if (["1","2","3","0"].includes(ev.key)){ modus = ({ "1":"acc", "2":"pre", "3":"rec", "0":null })[ev.key]; zeigen(); ev.preventDefault(); return; }
+  if (WEITER && parent !== window){ parent.postMessage({ rundgang:"taste", key: ev.key, shift: ev.shiftKey }, "*"); ev.preventDefault(); }
+});
+
+function einpassen(){
+  const b = $("#buehne"), s = Math.min(innerWidth / 1600, innerHeight / 900);
+  b.style.transform = `scale(${s})`;
+}
+addEventListener("resize", einpassen);
+einpassen(); rechnen();
+</script>
+</body>
+</html>

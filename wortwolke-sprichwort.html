@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Welches deutsche Sprichwort wird gesucht?</title>
+<style>
+  :root{
+    --navy:#1B3A5F;
+    --navy-deep:#0D1B2E;
+    --orange:#F08223;
+    --line:#C3D2E2;
+    --paper:#FFFFFF;
+    --muted:#9FBBDA;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;background:#0A1726 !important;}
+  body{
+    background:#0A1726 !important;
+    font-family:"Arimo",Arial,Helvetica,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    -webkit-text-size-adjust:100%;
+  }
+  #stage{
+    position:relative;
+    background:#1C3A5F;
+    color:#EAF2FB;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    font-size:16px;
+  }
+  .bannerwrap{
+    flex:0 0 auto;
+    width:100%;
+    background:#1C3A5F;
+    border-bottom:0.18em solid #F08223;
+    text-align:center;
+    line-height:0;
+  }
+  #banner{
+    display:inline-block;
+    width:66%;
+    height:auto;
+  }
+  .head{
+    flex:0 0 auto;
+    text-align:center;
+    padding:0.85em 1.2em 0.35em;
+    background:#1C3A5F;
+  }
+  h1{
+    margin:0;
+    color:#FFFFFF;
+    font-size:2.9em;
+    font-weight:700;
+    line-height:1.12;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    margin:0.55em 0 0;
+    font-size:1.05em;
+    color:#9FBBDA;
+    line-height:1.4;
+  }
+  #board{position:relative;flex:1 1 auto;min-height:0;background:#1C3A5F;}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;background:#1C3A5F;}
+  canvas.dragging{cursor:grabbing;}
+  .bar{
+    flex:0 0 auto;
+    background:#1C3A5F;
+    border-top:1px solid rgba(191,217,244,.20);
+    padding:1em 1.2em 1.2em;
+  }
+  #status{
+    margin:0;
+    text-align:center;
+    font-size:1.45em;
+    color:#EAF2FB;
+    min-height:1.5em;
+    line-height:1.3;
+  }
+  #status b{color:#F08223;font-weight:700;}
+  .tools{
+    position:absolute;
+    right:1.2em;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    flex-direction:column;
+    gap:0.6em;
+    z-index:2;
+  }
+  .tools button{
+    width:3.2em;
+    height:3.2em;
+    padding:0;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    line-height:0;
+  }
+  .tools svg{width:1.6em;height:1.6em;display:block;}
+  button{
+    font-family:inherit;
+    font-size:1em;
+    padding:0.5em 0.95em;
+    border-radius:0.2em;
+    border:1px solid rgba(191,217,244,.45);
+    background:transparent;
+    color:#EAF2FB;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  button:hover{background:rgba(191,217,244,.14);}
+  button:focus-visible{outline:0.15em solid #F08223;outline-offset:0.12em;}
+  button.primary{background:#F08223;border-color:#F08223;color:#241001;font-weight:700;}
+  button.primary:hover{background:#FF9840;border-color:#FF9840;}
+  button[aria-pressed="true"]{background:rgba(191,217,244,.22);color:#FFFFFF;}
+  button:disabled{opacity:.45;cursor:default;}
+</style>
+<script>
+/* ?rahmen=aus: nur Wolke und Bedienelemente zeigen (für die Einbettung in Rundgänge und den Präsentations-Baukasten). */
+try { if (new URLSearchParams(location.search).get("rahmen") === "aus") document.documentElement.classList.add("rahmen-aus"); } catch(_) {}
+</script>
+<style>
+.rahmen-aus .bannerwrap, .rahmen-aus .head, .rahmen-aus .bar { display:none !important; }
+.rahmen-aus #stage { width:100vw !important; height:100vh !important; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  
+
+  <div class="head">
+    <h1>Welches deutsche Sprichwort wird gesucht?</h1>
+    <p class="sub">Jede Verbindung trägt eine Wahrscheinlichkeit. Das Modell wählt 5-mal die höchste Zahl und kommt auf die Lösung, ohne ein Wort zu verstehen.</p>
+  </div>
+
+  <div id="board">
+    <canvas id="cloud" aria-label="Dreidimensionale Wortwolke mit 30 Wörtern und gewichteten Verbindungen"></canvas>
+
+    <div class="tools">
+      <button id="run" class="primary" title="Modell rechnen lassen (Leertaste)" aria-label="Modell rechnen lassen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5 19.5 12 7 19.5Z" fill="currentColor"/></svg>
+      </button>
+      <button id="reset" title="Zurücksetzen" aria-label="Zurücksetzen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><polyline points="19.5 3.6 19.5 9 14.1 9"/>
+        </svg>
+      </button>
+      <button id="toggleNums" aria-pressed="true" title="Zahlen ausblenden" aria-label="Zahlen ausblenden">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <text x="12" y="16" text-anchor="middle" font-family="Arimo, Arial, sans-serif" font-size="11" font-weight="700" fill="currentColor">0.9</text>
+        </svg>
+      </button>
+      <button id="toggleAll" aria-pressed="false" title="Alle Verbindungen zeigen" aria-label="Alle Verbindungen zeigen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M6 6 18 6 6 18 18 18 6 6 18 18 6 18 18 6"/>
+          <circle cx="6" cy="6" r="2.1" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="2.1" fill="currentColor" stroke="none"/>
+          <circle cx="6" cy="18" r="2.1" fill="currentColor" stroke="none"/><circle cx="18" cy="18" r="2.1" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <p id="status">Startwort ist „Morgenstund“. Welcher Nachbar hat den höchsten Wert?</p>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- deterministischer Zufall ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rnd = mulberry32(20260912);
+
+/* ---------- Wörter ---------- */
+const PATH = ["Morgenstund","hat","Gold","im","Mund"];
+const PATH_P = [0.91,0.88,0.79,0.94];
+const OTHERS = ["Abend","Silber","Sonne","Stunde","Feder","Schlaf","Bett","Vogel","Wurm","früh",
+                "spät","Katze","Maus","Tag","Nacht","Glück","Zeit","Eile","Weile","Ruhe",
+                "Kraft","Ende","Reden","Schweigen","Weg"];
+
+const R = 250;
+const nodes = [];
+nodes.push({label:PATH[0], x:0, y:0, z:0, path:0});
+
+const pathPos = [
+  {x: 150, y:-110, z:  70},
+  {x:-105, y: 145, z: -95},
+  {x: 190, y: 120, z:-140},
+  {x:-175, y:-135, z: 120}
+];
+for(let i=0;i<4;i++){
+  nodes.push({label:PATH[i+1], x:pathPos[i].x, y:pathPos[i].y, z:pathPos[i].z, path:i+1});
+}
+
+const n = OTHERS.length;
+for(let i=0;i<n;i++){
+  const phi = Math.acos(1 - 2*(i+0.5)/n);
+  const theta = Math.PI*(1+Math.sqrt(5))*(i+0.5);
+  const r = R*(0.82+rnd()*0.32);
+  nodes.push({
+    label:OTHERS[i],
+    x:r*Math.sin(phi)*Math.cos(theta),
+    y:r*Math.sin(phi)*Math.sin(theta)*0.78,
+    z:r*Math.cos(phi),
+    path:-1
+  });
+}
+
+/* ---------- Kanten ---------- */
+const edgeMap = new Map();
+function key(a,b){return a<b ? a+"_"+b : b+"_"+a;}
+function addEdge(a,b,p,isPath){
+  if(a===b) return;
+  const k = key(a,b);
+  if(edgeMap.has(k)){ if(isPath) edgeMap.get(k).path = true; return; }
+  edgeMap.set(k,{a:Math.min(a,b),b:Math.max(a,b),p:p,path:!!isPath});
+}
+for(let i=0;i<4;i++) addEdge(i,i+1,PATH_P[i],true);
+
+const lures = ["Abend","Silber","Stunde","Sonne","Schlaf","Feder"];
+const lureP = [0.29,0.24,0.18,0.15,0.11,0.07];
+lures.forEach(function(w,i){
+  const idx = nodes.findIndex(function(nd){return nd.label===w;});
+  if(idx>0) addEdge(0,idx,lureP[i],false);
+});
+
+function dist(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;return Math.sqrt(dx*dx+dy*dy+dz*dz);}
+for(let i=0;i<nodes.length;i++){
+  const order = nodes.map(function(nd,j){return {j:j,d:dist(nodes[i],nd)};})
+                     .filter(function(o){return o.j!==i;})
+                     .sort(function(x,y){return x.d-y.d;});
+  const count = 3 + Math.floor(rnd()*2);
+  for(let k=0;k<count;k++) addEdge(i,order[k].j, +(0.02+rnd()*0.30).toFixed(2), false);
+}
+for(let k=0;k<22;k++){
+  addEdge(Math.floor(rnd()*nodes.length), Math.floor(rnd()*nodes.length), +(0.02+rnd()*0.18).toFixed(2), false);
+}
+const edges = Array.from(edgeMap.values());
+
+const fullEdges = [];
+for(let i=0;i<nodes.length;i++){
+  for(let j=i+1;j<nodes.length;j++){
+    const ex = edgeMap.get(key(i,j));
+    fullEdges.push(ex ? ex : {a:i,b:j,p:+(0.01+rnd()*0.08).toFixed(2),path:false});
+  }
+}
+
+/* ---------- Bühne im Beamer-Format ---------- */
+const stage = document.getElementById("stage");
+const board = document.getElementById("board");
+const canvas = document.getElementById("cloud");
+const ctx = canvas.getContext("2d");
+const AR = 16/9;
+let W=0,H=0,cx=0,cy=0,dpr=1,unit=16;
+
+function fitStage(){
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let sw = vw, sh = vw/AR;
+  if(sh > vh){ sh = vh; sw = vh*AR; }
+  stage.style.width = Math.round(sw)+"px";
+  stage.style.height = Math.round(sh)+"px";
+  unit = sw/100;
+  stage.style.fontSize = unit+"px";
+  resizeCanvas();
+}
+
+function resizeCanvas(){
+  const r = board.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = r.width; H = r.height;
+  if(W<=0||H<=0) return;
+  canvas.width = Math.round(W*dpr);
+  canvas.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  cx = W/2; cy = H/2;
+  zoom = Math.max(0.42, Math.min(1.9, Math.min(W,H)/680));
+  layoutTargets();
+}
+window.addEventListener("resize", fitStage);
+
+/* ---------- Kamera ---------- */
+let rotX = -0.18, rotY = 0.4, zoom = 1;
+let autoSpin = true;
+const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(reduceMotion) autoSpin = false;
+const FOC = 820;
+
+function project(nd){
+  const cyR = Math.cos(rotY), syR = Math.sin(rotY);
+  const cxR = Math.cos(rotX), sxR = Math.sin(rotX);
+  const x1 = nd.x*cyR + nd.z*syR;
+  const z1 = -nd.x*syR + nd.z*cyR;
+  const y2 = nd.y*cxR - z1*sxR;
+  const z2 = nd.y*sxR + z1*cxR;
+  const s = FOC/(FOC+z2);
+  return {x: cx + x1*s*zoom, y: cy + y2*s*zoom, s:s, z:z2};
+}
+
+function baseSize(){ return Math.max(12, Math.min(34, W/64)); }
+
+/* ---------- Zielpositionen der Auflösung ---------- */
+let targets = [];
+function layoutTargets(){
+  const big = Math.max(20, Math.min(104, W/19));
+  ctx.font = "700 "+big+"px Arimo, Arial, sans-serif";
+  const gap = big*0.42;
+  const widths = PATH.map(function(w){return ctx.measureText(w).width;});
+  const total = widths.reduce(function(a,b){return a+b;},0) + gap*(PATH.length-1);
+  targets = [];
+  if(total < W*0.92){
+    let x = cx - total/2;
+    for(let i=0;i<PATH.length;i++){
+      targets.push({x:x+widths[i]/2, y:cy, size:big});
+      x += widths[i]+gap;
+    }
+  } else {
+    const rows = [[0,1],[2,3,4]];
+    const small = big*0.8;
+    ctx.font = "700 "+small+"px Arimo, Arial, sans-serif";
+    const wsm = PATH.map(function(w){return ctx.measureText(w).width;});
+    rows.forEach(function(row, ri){
+      const tw = row.reduce(function(a,i){return a+wsm[i];},0) + gap*(row.length-1);
+      let x = cx - tw/2;
+      row.forEach(function(i){
+        targets[i] = {x:x+wsm[i]/2, y:cy + (ri-0.5)*small*1.55, size:small};
+        x += wsm[i]+gap;
+      });
+    });
+  }
+}
+
+/* ---------- Auflösung ---------- */
+let revealStart = 0, revealing = false;
+const STEP_MS = 1500, GROW_MS = 1400;
+function easeInOut(t){return t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;}
+function revealProgress(i){
+  if(!revealing) return 0;
+  const t = (performance.now()-revealStart - i*STEP_MS)/GROW_MS;
+  return Math.max(0, Math.min(1, t));
+}
+
+const statusEl = document.getElementById("status");
+const IDLE = "Startwort ist „Morgenstund“. Welcher Nachbar hat den höchsten Wert?";
+let lastStep = -1;
+
+function updateStatus(){
+  if(!revealing) return;
+  const elapsed = performance.now()-revealStart;
+  const step = Math.min(PATH.length-1, Math.floor(elapsed/STEP_MS));
+  if(step===lastStep) return;
+  lastStep = step;
+  if(step===0){
+    statusEl.innerHTML = "Startwort <b>Morgenstund</b>. Das Modell vergleicht alle Nachbarn und nimmt den höchsten Wert.";
+  } else {
+    statusEl.innerHTML = "Nach „"+PATH.slice(0,step).join(" ")+"“ ist <b>"+PATH[step]+"</b> mit "+PATH_P[step-1].toFixed(2)+" der wahrscheinlichste Nachfolger.";
+  }
+  if(step===PATH.length-1){
+    setTimeout(function(){
+      statusEl.innerHTML = "Fünfmal die höchste Zahl gewählt. Kein einziges Mal verstanden, was der Satz bedeutet.";
+    }, GROW_MS+200);
+  }
+}
+
+/* ---------- Zeichnen ---------- */
+let showNumbers = true, showAll = false;
+
+function nodeScreen(i){
+  const nd = nodes[i];
+  const pr = project(nd);
+  let px=pr.x, py=pr.y;
+  let size = baseSize()*pr.s;
+  let alpha = Math.max(0.42, Math.min(1, pr.s*0.95));
+  if(nd.path>=0){
+    const t = easeInOut(revealProgress(nd.path));
+    if(t>0){
+      const tg = targets[nd.path];
+      px = px+(tg.x-px)*t;
+      py = py+(tg.y-py)*t;
+      size = size+(tg.size-size)*t;
+      alpha = alpha+(1-alpha)*t;
+    }
+  }
+  return {x:px, y:py, size:size, alpha:alpha, z:pr.z, front:(nd.path>=0 && revealProgress(nd.path)>0)};
+}
+
+function draw(){
+  ctx.fillStyle = "#1C3A5F";
+  ctx.fillRect(0,0,W,H);
+  const pts = nodes.map(function(_,i){return nodeScreen(i);});
+  const dim = revealing ? easeInOut(Math.min(1,(performance.now()-revealStart)/1800)) : 0;
+
+  const list = showAll ? fullEdges : edges;
+  const sorted = list.slice().sort(function(e1,e2){
+    return ((pts[e2.a].z+pts[e2.b].z)/2) - ((pts[e1.a].z+pts[e1.b].z)/2);
+  });
+
+  sorted.forEach(function(e){
+    const A = pts[e.a], B = pts[e.b];
+    const isPathEdge = e.path;
+    const hot = isPathEdge && revealing;
+    let a = (showAll ? 0.10 : 0.16 + e.p*0.60) * (0.5 + 0.5*Math.min(A.alpha,B.alpha));
+    if(!isPathEdge) a *= (1 - dim*0.85);
+    if(hot) a = Math.min(0.95, a + 0.5);
+    ctx.strokeStyle = hot ? "rgba(240,130,35,"+a.toFixed(3)+")" : "rgba(191,217,244,"+a.toFixed(3)+")";
+    ctx.lineWidth = hot ? Math.max(2, W/640) : Math.max(0.8, W/1500);
+    ctx.beginPath();
+    ctx.moveTo(A.x,A.y);
+    ctx.lineTo(B.x,B.y);
+    ctx.stroke();
+
+    const dx=B.x-A.x, dy=B.y-A.y;
+    const len = Math.sqrt(dx*dx+dy*dy);
+    const near = Math.min(A.alpha,B.alpha) > 0.72;
+    const wanted = hot || (showNumbers && !showAll && near && len > W/16);
+    if(wanted && len > W/28){
+      const mx = A.x+dx*0.5, my = A.y+dy*0.5;
+      const fs = hot ? baseSize()*0.72 : baseSize()*0.58;
+      ctx.font = (hot?"700 ":"")+fs.toFixed(1)+"px Arimo, Arial, sans-serif";
+      const txt = e.p.toFixed(2);
+      const tw = ctx.measureText(txt).width;
+      ctx.fillStyle = "rgba(10,24,42,0.92)";
+      ctx.fillRect(mx-tw/2-fs*0.25, my-fs*0.62, tw+fs*0.5, fs*1.24);
+      ctx.strokeStyle = hot ? "rgba(240,130,35,0.8)" : "rgba(191,217,244,0.30)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(mx-tw/2-fs*0.25, my-fs*0.62, tw+fs*0.5, fs*1.24);
+      ctx.fillStyle = hot ? "#F5A44F" : "rgba(191,217,244,"+Math.min(0.95,0.5+a).toFixed(3)+")";
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(txt, mx, my);
+    }
+  });
+
+  const order = nodes.map(function(_,i){return i;}).sort(function(i,j){
+    const fi = pts[i].front?1:0, fj = pts[j].front?1:0;
+    if(fi!==fj) return fi-fj;
+    return pts[j].z - pts[i].z;
+  });
+
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  order.forEach(function(i){
+    const nd = nodes[i], p = pts[i];
+    let alpha = p.alpha;
+    if(nd.path<0) alpha *= (1 - dim*0.78);
+    const isCore = (nd.path===0);
+    const hi = nd.path>=0 && revealProgress(nd.path)>0.02;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y - p.size*0.92, Math.max(1.6, p.size*0.11), 0, Math.PI*2);
+    ctx.fillStyle = (isCore||hi) ? "rgba(240,130,35,"+(alpha*0.95).toFixed(3)+")"
+                                 : "rgba(191,217,244,"+(alpha*0.55).toFixed(3)+")";
+    ctx.fill();
+
+    ctx.font = (isCore||hi ? "700 " : "")+p.size.toFixed(1)+"px Arimo, Arial, sans-serif";
+    ctx.fillStyle = (isCore||hi) ? "rgba(240,130,35,"+alpha.toFixed(3)+")"
+                                 : "rgba(234,242,251,"+alpha.toFixed(3)+")";
+    ctx.fillText(nd.label, p.x, p.y);
+  });
+}
+
+function frame(){
+  if(autoSpin) rotY += 0.0016;
+  updateStatus();
+  if(W>0&&H>0) draw();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Eingaben ---------- */
+let dragging=false,lastX=0,lastY=0,pointers=new Map(),pinchStart=0,zoomStart=1;
+canvas.addEventListener("pointerdown", function(e){
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size===1){dragging=true;lastX=e.clientX;lastY=e.clientY;autoSpin=false;canvas.classList.add("dragging");}
+  if(pointers.size===2){
+    const p=Array.from(pointers.values());
+    pinchStart=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+    zoomStart=zoom;
+  }
+});
+canvas.addEventListener("pointermove", function(e){
+  if(!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size===2){
+    const p=Array.from(pointers.values());
+    const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+    if(pinchStart>0) zoom=Math.max(0.3,Math.min(3,zoomStart*(d/pinchStart)));
+    return;
+  }
+  if(!dragging) return;
+  rotY += (e.clientX-lastX)*0.006;
+  rotX += (e.clientY-lastY)*0.005;
+  rotX = Math.max(-1.2, Math.min(1.2, rotX));
+  lastX=e.clientX; lastY=e.clientY;
+});
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  if(pointers.size<2) pinchStart=0;
+  if(pointers.size===0){dragging=false;canvas.classList.remove("dragging");}
+}
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+canvas.addEventListener("wheel", function(e){
+  e.preventDefault();
+  zoom = Math.max(0.3, Math.min(3, zoom*(e.deltaY<0?1.08:0.93)));
+}, {passive:false});
+
+/* ?tasten=weiter: eingebettet in einen Rundgang. Alle Tasten außer der Leertaste gehen an den
+   Rundgang (Pfeile, Esc, Klicker), die Leertaste lässt weiter das Modell rechnen. */
+const TASTEN_WEITER = (() => { try { return window.parent !== window && new URLSearchParams(location.search).get("tasten") === "weiter"; } catch(_) { return false; } })();
+window.addEventListener("keydown", function(e){
+  if(TASTEN_WEITER && e.key !== " "){
+    e.preventDefault();
+    try { window.parent.postMessage({ rundgang:"taste", key:e.key, shift:e.shiftKey }, "*"); } catch(_) {}
+    return;
+  }
+  if(e.key==="ArrowLeft"){rotY-=0.08;autoSpin=false;}
+  if(e.key==="ArrowRight"){rotY+=0.08;autoSpin=false;}
+  if(e.key==="ArrowUp"){rotX=Math.max(-1.2,rotX-0.06);autoSpin=false;}
+  if(e.key==="ArrowDown"){rotX=Math.min(1.2,rotX+0.06);autoSpin=false;}
+  if(e.key===" "){e.preventDefault();runBtn.click();}
+});
+
+/* ---------- Bedienelemente ---------- */
+const runBtn = document.getElementById("run");
+const resetBtn = document.getElementById("reset");
+const numBtn = document.getElementById("toggleNums");
+const allBtn = document.getElementById("toggleAll");
+
+runBtn.addEventListener("click", function(){
+  if(runBtn.disabled) return;
+  layoutTargets();
+  revealing = true;
+  revealStart = performance.now();
+  lastStep = -1;
+  autoSpin = !reduceMotion;
+  runBtn.disabled = true;
+});
+resetBtn.addEventListener("click", function(){
+  revealing = false; lastStep = -1;
+  runBtn.disabled = false;
+  statusEl.textContent = IDLE;
+  rotX = -0.18; rotY = 0.4;
+  fitStage();
+  autoSpin = !reduceMotion;
+});
+numBtn.addEventListener("click", function(){
+  showNumbers = !showNumbers;
+  numBtn.setAttribute("aria-pressed", String(showNumbers));
+  const tn = showNumbers ? "Zahlen ausblenden" : "Zahlen einblenden";
+  numBtn.title = tn; numBtn.setAttribute("aria-label", tn);
+});
+allBtn.addEventListener("click", function(){
+  showAll = !showAll;
+  allBtn.setAttribute("aria-pressed", String(showAll));
+  const ta = showAll ? "Nur starke Verbindungen zeigen" : "Alle Verbindungen zeigen";
+  allBtn.title = ta; allBtn.setAttribute("aria-label", ta);
+});
+fitStage();
+setTimeout(fitStage, 60);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

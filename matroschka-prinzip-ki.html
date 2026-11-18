@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Das Matroschka-Prinzip der KI</title>
+<style>
+:root {
+  --navy: #1B3A5F;
+  --orange: #F08223;
+  --hg: #F5F8FC;
+  --text: #1A1A1A;
+  --text2: #3F4A57;
+  --kopf: #1B3A5F;
+  --linie: #1B3A5F;
+  --f0: #E8EEF5;
+  --f1: #DCE5EF;
+  --f2: #CFDBE8;
+  --f3: #C1D0E1;
+  --f4: #FFF1E3;
+  --karte: rgba(255,255,255,.78);
+  --karte-rand: #B9C8DA;
+  --wichtig: #FFFFFF;
+  --leiste: rgba(255,255,255,.92);
+  --leiste-rand: #D1D5DB;
+  --schublade: #FFFFFF;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hg: #0B1626;
+    --text: #EEF2F7;
+    --text2: #C3CEDB;
+    --kopf: #BFD9F4;
+    --linie: #7FA3CC;
+    --f0: #102238;
+    --f1: #142B46;
+    --f2: #193454;
+    --f3: #1F3E63;
+    --f4: #3A2716;
+    --karte: rgba(11,22,38,.62);
+    --karte-rand: #35557D;
+    --wichtig: #0E1D31;
+    --leiste: rgba(11,22,38,.94);
+    --leiste-rand: #2A4466;
+    --schublade: #0E1D31;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --hg: #0B1626; --text: #EEF2F7; --text2: #C3CEDB; --kopf: #BFD9F4; --linie: #7FA3CC;
+  --f0: #102238; --f1: #142B46; --f2: #193454; --f3: #1F3E63; --f4: #3A2716;
+  --karte: rgba(11,22,38,.62); --karte-rand: #35557D; --wichtig: #0E1D31;
+  --leiste: rgba(11,22,38,.94); --leiste-rand: #2A4466; --schublade: #0E1D31;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  background: var(--hg);
+  color: var(--text);
+  font-family: Arimo, Arial, "Liberation Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+#buehne {
+  position: fixed;  /* fest: zählt nicht zur Seitenbreite, sonst wird die Seite am Handy breiter */
+  width: 1600px; height: 900px;
+  left: 50%; top: calc((100% - 52px) / 2);
+  transform: translate(-50%, -50%) scale(var(--s, 1));
+  transform-origin: 50% 50%;
+  cursor: pointer;
+}
+#kreise { position: absolute; inset: 0; overflow: visible; }
+#kreise ellipse { stroke: var(--linie); stroke-width: 2.5; }
+#kreise ellipse.zusatz { stroke: var(--orange); stroke-width: 3.5; stroke-dasharray: 14 10; }
+
+/* Präsentationstitel oben links (Folien 2 bis 7) */
+#kopf {
+  position: absolute; left: 36px; top: 20px;
+  font-size: 22px; font-weight: 700; color: var(--kopf); letter-spacing: .01em;
+  opacity: 1; transition: opacity .45s .6s; pointer-events: none;
+}
+#kopf::after { content: ""; display: block; width: 44px; height: 3px; margin-top: 7px; background: var(--orange); border-radius: 2px; }
+#kopf.weg { opacity: 0; transition-delay: 0s; }
+
+/* Überschriften der Kreise */
+.titel {
+  position: absolute;
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--kopf);
+  line-height: 1.15;
+  transition-property: left, top, font-size, transform, opacity;
+  transition-duration: .95s, .95s, .95s, .95s, .45s;
+  transition-timing-function: cubic-bezier(.65,0,.35,1);
+  transition-delay: .15s, .15s, .15s, .15s, 1.15s;  /* neue Überschrift erst, wenn der Kreis steht */
+  pointer-events: none;
+}
+.titel.weg { opacity: 0; transition-delay: 0s; }
+.titel.klickbar { pointer-events: auto; cursor: pointer; }
+.titel.klickbar:hover, .titel.klickbar:focus-visible {
+  text-decoration: underline; text-decoration-color: var(--orange);
+  text-decoration-thickness: 3px; text-underline-offset: 6px; outline: none;
+}
+.titel.zusatz { color: var(--orange); }
+:root[data-theme="dark"] .titel.zusatz { color: #F7A55E; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .titel.zusatz { color: #F7A55E; } }
+
+/* Inhalte im Fokuskreis */
+.inhalt {
+  position: absolute;
+  left: 800px;
+  transform: translateX(-50%) translateY(14px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .3s, transform .3s, visibility 0s .3s;
+  text-align: center;
+  pointer-events: none;
+}
+.inhalt.aktiv {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity .55s 1.15s, transform .55s 1.15s, visibility 0s 1.15s;  /* erst, wenn der Kreis steht */
+  pointer-events: auto;
+}
+.untertitel { font-size: 21px; color: var(--text2); margin: 0 0 12px; font-style: italic; }
+.badge {
+  display: inline-block; margin: 0 0 0 14px; padding: 2px 14px; font-style: normal; vertical-align: 2px; border-radius: 999px;
+  border: 2px dashed var(--orange); color: var(--text); font-size: 17px; font-weight: 600;
+  background: var(--karte);
+}
+.definition {
+  font-size: 27px; line-height: 1.38; margin: 0 auto 16px; max-width: 840px; color: var(--text);
+}
+.definition b { color: var(--kopf); }
+.karten { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: left; }
+.karte {
+  background: var(--karte);
+  border: 1.5px solid var(--karte-rand);
+  border-radius: 14px;
+  padding: 14px 18px 16px;
+  font-size: 18.5px; line-height: 1.42;
+}
+.karte h3 {
+  margin: 0 0 6px; font-size: 14px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700;
+}
+.karte ul { margin: 0; padding-left: 1.05em; }
+.karte li { margin: 0 0 2px; }
+.wichtig {
+  margin: 14px auto 0; max-width: 960px; text-align: left;
+  background: var(--wichtig);
+  border-left: 6px solid var(--orange);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 19px; line-height: 1.42;
+  box-shadow: 0 2px 10px rgba(27,58,95,.10);
+}
+.wichtig b { color: var(--kopf); }
+/* erster Kreis: kompakter, weil er ganz zu sehen ist */
+.inhalt.kompakt .definition { font-size: 24px; max-width: 680px; margin-bottom: 16px; }
+.inhalt.kompakt .karte { font-size: 16px; padding: 11px 13px 12px; }
+.inhalt.kompakt .karte h3 { font-size: 12.5px; }
+.inhalt.kompakt .wichtig { font-size: 16.5px; max-width: 640px; margin-top: 12px; padding: 10px 14px; }
+.inhalt.kompakt .untertitel { font-size: 19px; margin-bottom: 12px; }
+
+/* Knopf „Mehr dazu“ unter jeder Erklärung */
+.mehr-knopf {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 14px auto 0; padding: 0 26px; height: 46px;
+  font: inherit; font-size: 19px; font-weight: 700; color: var(--kopf);
+  background: var(--wichtig); border: 2.5px solid var(--orange); border-radius: 999px;
+  cursor: pointer; box-shadow: 0 2px 10px rgba(27,58,95,.12);
+  transition: background .2s, color .2s;
+}
+.mehr-knopf .pfeil { color: var(--orange); font-size: 22px; line-height: 1; transition: color .2s; }
+.mehr-knopf:hover, .mehr-knopf[aria-pressed="true"] { background: var(--orange); color: #fff; }
+.mehr-knopf:hover .pfeil, .mehr-knopf[aria-pressed="true"] .pfeil { color: #fff; }
+.mehr-knopf:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+.mehr-knopf .taste { font-weight: 400; font-size: 15px; opacity: .75; }
+.inhalt.kompakt .mehr-knopf { margin-top: 14px; height: 44px; font-size: 17px; }
+.zentriert { text-align: center; }
+
+/* Überblick */
+.kurz {
+  position: absolute; width: 250px;
+  font-size: 15.5px; line-height: 1.36; color: var(--text);
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+.kurz.aktiv { opacity: 1; transition: opacity .5s 1.15s; pointer-events: auto; cursor: pointer; }
+.tipp { margin: 0; font-size: 15.5px; color: var(--text2); }
+.knopfzeile { display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 14px; }
+.knopfzeile .mehr-knopf { margin: 0; }
+/* Startseite */
+#start { top: 62px; width: 1300px; }
+#start .eyebrow {
+  font-family: Futura, "Century Gothic", "Avenir Next", Arial, sans-serif;
+  color: var(--orange); font-size: 20px; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 14px;
+}
+#start h1 { margin: 0 0 16px; font-size: 68px; line-height: 1.08; color: var(--kopf); }
+#start .leitfrage { margin: 0 auto 14px; max-width: 980px; font-size: 27px; line-height: 1.4; color: var(--text); }
+#start .hinweis { font-size: 16px; color: var(--text2); margin: 0; }
+#zusammenhang { top: 484px; width: 1520px; text-align: left; }
+#zusammenhang h2 { margin: 0 0 12px; font-size: 29px; color: var(--kopf); text-align: center; }
+#zusammenhang h2 span { font-weight: 400; color: var(--text2); }
+.kette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.glied {
+  background: var(--karte); border: 1.5px solid var(--karte-rand); border-radius: 14px;
+  padding: 14px 18px 16px; font-size: 18.5px; line-height: 1.4; position: relative;
+}
+.glied.zusatz { border: 2px dashed var(--orange); }
+.glied .von { font-size: 14.5px; color: var(--text2); margin-bottom: 4px; }
+.glied .plus { font-size: 25px; font-weight: 700; color: var(--orange); margin-bottom: 4px; }
+.glied:not(:last-child)::after {
+  content: "›"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%);
+  font-size: 30px; color: var(--orange); font-weight: 700;
+}
+.unten { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.unten .wichtig { margin: 0; max-width: none; font-size: 18.5px; }
+
+/* Leiste */
+#leiste {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: calc(52px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 0 16px; gap: 12px;
+  background: var(--leiste); border-top: 1px solid var(--leiste-rand);
+  font-size: 15px; color: var(--text2); z-index: 5;
+}
+#leiste .links { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#nr {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--orange); color: #fff;
+  display: grid; place-items: center; font-weight: 700; font-size: 15px; flex: none;
+}
+#leiste .links span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#leiste .mitte { text-align: center; white-space: nowrap; }
+#leiste .rechts { display: flex; justify-content: flex-end; gap: 8px; }
+#leiste button {
+  font: inherit; font-size: 15px; color: var(--kopf); background: transparent;
+  border: 1.5px solid var(--leiste-rand); border-radius: 8px; height: 34px; padding: 0 12px; cursor: pointer;
+}
+#leiste button:hover { border-color: var(--orange); }
+#leiste button[aria-current="true"] { border-color: var(--orange); background: var(--orange); color: #fff; }
+#leiste button:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+#leiste button[aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: #fff; }
+
+/* Schublade „Mehr dazu“ */
+#schublade {
+  position: fixed; top: 0; right: 0; bottom: 52px; width: min(500px, 100%);
+  background: var(--schublade); border-left: 1px solid var(--leiste-rand);
+  box-shadow: -8px 0 30px rgba(0,0,0,.14);
+  padding: 26px 28px 30px; overflow-y: auto; z-index: 6;
+  transform: translateX(105%); transition: transform .35s cubic-bezier(.65,0,.35,1);
+  user-select: text; font-size: 17px; line-height: 1.55;
+}
+#schublade.offen { transform: translateX(0); }
+#schublade h2 { margin: 0 0 4px; font-size: 25px; color: var(--kopf); }
+#schublade h3 { margin: 22px 0 6px; font-size: 15px; letter-spacing: .07em; text-transform: uppercase; color: var(--orange); }
+#schublade p { margin: 0 0 10px; }
+#schublade ul { margin: 0 0 10px; padding-left: 1.2em; }
+#schublade .klein { font-size: 14.5px; color: var(--text2); }
+#schublade a { color: var(--kopf); }
+#zu { position: absolute; top: 14px; right: 14px; font: inherit; font-size: 22px; line-height: 1; background: none; border: 0; color: var(--text2); cursor: pointer; padding: 6px 10px; }
+
+@media (max-width: 700px) {
+  #leiste .mitte, #leiste .links span { display: none; }
+  #leiste button { padding: 0 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .titel, .inhalt, .inhalt.aktiv, .kurz, .kurz.aktiv, #schublade, #kopf { transition: none !important; }
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+
+<div id="buehne" role="region" aria-label="Präsentation: Das Matroschka-Prinzip der KI. Weiter mit Klick, Leertaste oder Pfeil nach rechts.">
+  <svg id="kreise" viewBox="0 0 1600 900" width="1600" height="900" aria-hidden="true"></svg>
+  <div id="kopf" class="weg">Das Matroschka-Prinzip der KI</div>
+  <div id="titel-ebene"></div>
+  <div id="inhalt-ebene"></div>
+</div>
+
+<div id="leiste">
+  <div class="links"><div id="nr">1</div><span id="stand">Folie 1 von 7</span></div>
+  <div class="mitte">Ingo Günther</div>
+  <div class="rechts">
+    <button id="zum-start" type="button">Start</button>
+    <button id="zur-uebersicht" type="button">Übersicht</button>
+    <button id="zurueck" type="button" aria-label="Zurück">‹</button>
+    <button id="weiter" type="button" aria-label="Weiter">›</button>
+  </div>
+</div>
+
+<aside id="schublade" aria-label="Mehr dazu" aria-hidden="true">
+  <button id="zu" type="button" aria-label="Schließen">×</button>
+  <div id="schublade-inhalt"></div>
+</aside>
+
+<div id="ansage" class="sr" aria-live="polite"></div>
+
+<script>
+/* ================= INHALTE ================= */
+const EBENEN = [
+  {
+    id: 'ki',
+    titel: 'Künstliche Intelligenz',
+    untertitel: 'Artificial Intelligence, kurz KI',
+    definition: 'Computersysteme, die Aufgaben lösen, für die ein Mensch <b>Intelligenz</b> bräuchte: erkennen, verstehen, entscheiden, planen.',
+    karten: [
+      ['So funktioniert es', 'Auf 2 Wegen: mit <b>festen Regeln</b>, die Menschen vorgeben („wenn …, dann …“), oder indem das System selbst aus Beispielen <b>lernt</b>.'],
+      ['Beispiele aus dem Alltag', '<ul><li>Navi berechnet den schnellsten Weg</li><li>Rechtschreibprüfung markiert Tippfehler</li><li>Chatbot im Kundenservice gibt feste Antworten auf häufige Fragen</li></ul>'],
+      ['Woher der Begriff kommt', 'Geprägt hat ihn John McCarthy 1955 für eine Konferenz am Dartmouth College (USA) im Sommer 1956. Sie gilt als Geburtsstunde der KI-Forschung.']
+    ],
+    wichtig: '<b>Der äußerste Kreis, der Oberbegriff.</b> Nicht jede KI lernt: Auch ein Programm mit fest eingebauten Regeln zählt dazu.',
+    kurz: 'Oberbegriff: Computer lösen Aufgaben, für die Menschen Intelligenz brauchen. Auch mit festen Regeln.',
+    mehr: `
+      <h2>Künstliche Intelligenz</h2>
+      <p class="klein">Artificial Intelligence, kurz KI oder AI</p>
+      <h3>In einfachen Worten</h3>
+      <p>KI ist der Sammelbegriff für alle Computerprogramme, die etwas können, wofür ein Mensch nachdenken müsste: Sprache verstehen, Bilder erkennen, Entscheidungen treffen, Wege planen.</p>
+      <p>Wichtig: „Intelligenz“ heißt hier nicht, dass der Computer denkt oder versteht wie ein Mensch. Er liefert Ergebnisse, die intelligent <i>wirken</i>.</p>
+      <h3>2 Wege zur KI</h3>
+      <ul>
+        <li><b>Regeln:</b> Fachleute schreiben das Wissen als Wenn-dann-Regeln auf. Beispiel: medizinische Expertensysteme der 1970er-Jahre. Der Schachcomputer Deep Blue, der 1997 den Weltmeister Garri Kasparow schlug, rechnete vor allem Züge durch, nach vorgegebenen Bewertungsregeln.</li>
+        <li><b>Lernen:</b> Das System leitet die Regeln selbst aus Beispielen ab. Das ist der nächste Kreis: Machine Learning.</li>
+      </ul>
+      <h3>Schwache und starke KI</h3>
+      <p>Alle heutigen KI-Systeme sind „schwache“ oder spezialisierte KI: Sie können eine Sache sehr gut. Eine „starke“ KI, die wie ein Mensch alles kann, gibt es bisher nicht.</p>
+      <h3>Herkunft</h3>
+      <p>Den Begriff „Artificial Intelligence“ prägte der Informatiker John McCarthy 1955 im Antrag für ein Sommer-Forschungsprojekt am Dartmouth College in den USA. Das Treffen im Sommer 1956 gilt als Startpunkt der KI-Forschung.</p>`
+  },
+  {
+    id: 'ml',
+    titel: 'Machine Learning',
+    untertitel: 'Maschinelles Lernen, kurz ML',
+    definition: 'Ein Teil der KI: Der Computer <b>lernt aus Beispielen und Daten</b> selbst, statt dass jemand ihm jede Regel einprogrammiert.',
+    karten: [
+      ['So funktioniert es', 'Das System sieht sehr viele Beispiele, etwa tausende E-Mails mit dem Vermerk „Spam“ oder „kein Spam“. Es findet darin Muster und ordnet danach neue Fälle selbst ein.'],
+      ['Beispiele aus dem Alltag', '<ul><li>Spamfilter im Postfach</li><li>Film- und Musikvorschläge bei Netflix oder Spotify</li><li>Die Bank bemerkt eine verdächtige Kartenzahlung</li></ul>'],
+      ['Woher der Begriff kommt', 'Arthur Samuel (IBM) prägte ihn 1959. Sein Programm lernte Dame, indem es immer wieder gegen sich selbst spielte, und wurde dabei stetig besser.']
+    ],
+    wichtig: '<b>Neu gegenüber dem äußeren Kreis: das Lernen aus Daten.</b> Darum gilt: Schlechte oder einseitige Beispiele führen zu schlechten Ergebnissen.',
+    kurz: 'Lernt Regeln selbst aus Beispielen und Daten, statt sie vorgegeben zu bekommen.',
+    mehr: `
+      <h2>Machine Learning</h2>
+      <p class="klein">Maschinelles Lernen, kurz ML</p>
+      <h3>In einfachen Worten</h3>
+      <p>Bei klassischer Software schreibt ein Mensch jede Regel auf. Beim Machine Learning zeigt man dem Computer stattdessen viele Beispiele, und er findet die Regeln selbst. Das Ergebnis dieses Trainings nennt man <b>Modell</b>.</p>
+      <p>Ein <b>Algorithmus</b> ist dabei einfach eine genaue Rechenvorschrift, eine Schritt-für-Schritt-Anleitung für den Computer.</p>
+      <h3>3 Arten zu lernen</h3>
+      <ul>
+        <li><b>Mit Lösungen (überwachtes Lernen):</b> Die Beispiele sind beschriftet, etwa „Spam“ und „kein Spam“. Das System lernt, die Beschriftung vorherzusagen.</li>
+        <li><b>Ohne Lösungen (unüberwachtes Lernen):</b> Das System sucht selbst nach Gruppen und Auffälligkeiten, zum Beispiel Kundengruppen mit ähnlichem Kaufverhalten.</li>
+        <li><b>Durch Belohnung (bestärkendes Lernen):</b> Das System probiert aus und bekommt Plus- oder Minuspunkte, etwa ein Roboterarm, der lernt, Teile zu greifen.</li>
+      </ul>
+      <h3>Häufiger Irrtum</h3>
+      <p>KI und Machine Learning sind <b>nicht</b> dasselbe. Machine Learning ist nur ein Teil der KI. Ein Programm mit fest eingebauten Regeln ist KI, aber kein Machine Learning.</p>
+      <h3>Herkunft</h3>
+      <p>Arthur Samuel, Forscher bei IBM, verwendete den Begriff 1959 in einer Veröffentlichung über sein Dame-Programm. Er beschrieb Machine Learning sinngemäß als die Fähigkeit von Computern zu lernen, ohne ausdrücklich dafür programmiert zu sein.</p>`
+  },
+  {
+    id: 'dl',
+    titel: 'Deep Learning',
+    untertitel: 'Tiefes Lernen mit künstlichen neuronalen Netzen',
+    definition: 'Ein Teil des Machine Learning: Lernen mit <b>künstlichen neuronalen Netzen aus vielen Schichten</b>. Vorbild ist grob das Gehirn mit seinen vernetzten Nervenzellen.',
+    karten: [
+      ['So funktioniert es', 'Jede Schicht erkennt etwas mehr. Bei einem Foto erst Kanten, dann Formen, dann Augen und Nase, am Ende „ein Gesicht“. Worauf es achten muss, findet das Netz selbst heraus.'],
+      ['Beispiele aus dem Alltag', '<ul><li>Handy per Gesicht entsperren</li><li>Spracherkennung bei Siri oder Alexa</li><li>Übersetzungsprogramme wie DeepL</li></ul>'],
+      ['Woher der Begriff kommt', 'Die Idee künstlicher neuronaler Netze stammt aus den 1940er-Jahren. Der Durchbruch kam 2012, als ein tiefes Netz einen großen Wettbewerb in Bilderkennung klar gewann.']
+    ],
+    wichtig: '<b>„Deep“ heißt: viele Schichten.</b> Das braucht sehr viele Daten und viel Rechenleistung. Warum das Netz zu einem Ergebnis kommt, lässt sich oft nicht nachvollziehen: Es ist eine „Black Box“.',
+    kurz: 'Machine Learning mit künstlichen neuronalen Netzen aus vielen Schichten.',
+    mehr: `
+      <h2>Deep Learning</h2>
+      <p class="klein">Tiefes Lernen mit künstlichen neuronalen Netzen</p>
+      <h3>In einfachen Worten</h3>
+      <p>Ein künstliches neuronales Netz besteht aus vielen kleinen Recheneinheiten, die in Schichten hintereinander liegen. Die erste Schicht bekommt die Rohdaten, zum Beispiel die Bildpunkte eines Fotos. Die letzte Schicht gibt das Ergebnis aus. Dazwischen liegen viele „verborgene“ Schichten. Je mehr Schichten, desto „tiefer“ das Netz.</p>
+      <h3>Das Bild vom Mischpult</h3>
+      <p>Stell dir ein Mischpult mit Millionen Reglern vor, die zu Beginn zufällig stehen. Die Regler sind die Verbindungsstärken im Netz. Beim Training werden sie immer wieder ein kleines Stück verschoben, bis das Ergebnis stimmt. Danach weiß niemand mehr genau, wie die Millionen Regler stehen und warum. Deshalb spricht man von einer <b>Black Box</b>.</p>
+      <h3>Der Unterschied zum „normalen“ Machine Learning</h3>
+      <p>Beim klassischen Machine Learning legen oft Menschen fest, auf welche Merkmale das System achten soll. Deep Learning findet diese Merkmale selbst, direkt aus den Rohdaten. Das macht es stark bei Bildern, Sprache und Text.</p>
+      <h3>Herkunft</h3>
+      <p>Erste mathematische Modelle künstlicher Nervenzellen gab es 1943. Lange fehlten aber Daten und Rechenleistung. 2012 gewann ein tiefes Netz (AlexNet) den Bilderkennungs-Wettbewerb ImageNet mit großem Abstand. Möglich machten das Grafikkarten, die sehr viele Rechnungen gleichzeitig ausführen.</p>`
+  },
+  {
+    id: 'genki',
+    titel: 'Generative KI',
+    untertitel: 'Generative Künstliche Intelligenz',
+    definition: 'Ein Teil des Deep Learning: Modelle, die nicht nur einordnen, sondern <b>neue Inhalte erzeugen</b>: Texte, Bilder, Musik, Videos oder Programmcode.',
+    karten: [
+      ['So funktioniert es', 'Sie hat aus riesigen Datenmengen gelernt, wie Inhalte typischerweise aussehen. Dann berechnet sie Stück für Stück, was <b>am wahrscheinlichsten</b> als Nächstes passt. Sie schlägt nichts nach.'],
+      ['Beispiele aus dem Alltag', '<ul><li>Texte schreiben mit ChatGPT</li><li>Bilder erzeugen mit Midjourney</li><li>Lieder erzeugen mit Suno</li></ul>'],
+      ['Woher der Begriff kommt', 'Grundlage der heutigen Welle ist die „Transformer“-Technik, 2017 von Google-Forschenden vorgestellt. Breit bekannt wurde Generative KI mit ChatGPT im November 2022.']
+    ],
+    wichtig: '<b>Neu gegenüber Deep Learning: Erzeugen statt Einordnen.</b> Weil sie mit Wahrscheinlichkeiten arbeitet, klingt alles überzeugend, kann aber falsch oder erfunden sein. Ergebnisse immer prüfen.',
+    kurz: 'Deep-Learning-Modelle, die neue Inhalte erzeugen: Text, Bild, Ton, Code.',
+    mehr: `
+      <h2>Generative KI</h2>
+      <p class="klein">Generative Künstliche Intelligenz</p>
+      <h3>In einfachen Worten</h3>
+      <p>„Generativ“ heißt „erzeugend“. Die meisten Deep-Learning-Systeme <b>ordnen ein</b>: Ein Spamfilter sagt „Spam“ oder „kein Spam“. Generative KI <b>erzeugt</b> dagegen etwas Neues: Sie schreibt die E-Mail, malt das Bild, komponiert die Melodie.</p>
+      <h3>Wahrscheinlichkeit statt Nachschlagen</h3>
+      <p>Eine Suchmaschine holt fertige Treffer aus einem Verzeichnis. Generative KI berechnet ihre Antwort jedes Mal neu, Stück für Stück nach Wahrscheinlichkeit. Daraus folgt:</p>
+      <ul>
+        <li>Sie kann überzeugend klingende, aber falsche Aussagen erzeugen („halluzinieren“).</li>
+        <li>Sie rechnet nicht zuverlässig und trifft keine exakte Wortzahl.</li>
+        <li>Der Betrieb braucht viel Rechenleistung und Strom.</li>
+      </ul>
+      <h3>Herkunft</h3>
+      <p>Erzeugende Modelle gibt es schon länger. Den großen Sprung brachte 2017 der „Transformer“, vorgestellt von Google-Forschenden im Aufsatz „Attention Is All You Need“. Mit ChatGPT (OpenAI, 30. November 2022) kam Generative KI im Alltag an.</p>`
+  },
+  {
+    id: 'llm',
+    zusatz: true,
+    titel: 'Große Sprachmodelle',
+    untertitel: 'Large Language Models, kurz LLM',
+    badge: 'Zusatzebene zum besseren Verständnis',
+    definition: 'Der Teil der Generativen KI, der mit <b>Sprache</b> arbeitet. Das meinen die meisten, wenn sie heute „KI“ sagen.',
+    karten: [
+      ['So funktioniert es', 'Ein LLM hat mit riesigen Textmengen trainiert. Es zerlegt Text in kleine Stücke (Tokens) und sagt immer das <b>nächste wahrscheinlichste Stück</b> voraus, Wort für Wort.'],
+      ['Beispiele', '<ul><li>ChatGPT (OpenAI)</li><li>Claude (Anthropic)</li><li>Gemini (Google)</li><li>Le Chat (Mistral, Frankreich)</li></ul>'],
+      ['Warum eine Zusatzebene?', 'Die klassische Darstellung endet bei der Generativen KI. Diese 5. Ebene zeigt nur, wo ChatGPT & Co. stecken. Bild-, Musik- und Videomodelle sind Generative KI, aber keine Sprachmodelle.']
+    ],
+    wichtig: '<b>„Groß“ meint die Zahl der Regler im Netz:</b> oft viele Milliarden. Ein LLM ist kein Lexikon, sondern ein sehr gutes Vorhersagemodell für Sprache.',
+    kurz: 'Zusatzebene: Generative KI für Sprache, etwa ChatGPT, Claude, Gemini.',
+    mehr: `
+      <h2>Große Sprachmodelle</h2>
+      <p class="klein">Large Language Models, kurz LLM · Zusatzebene zum besseren Verständnis</p>
+      <h3>In einfachen Worten</h3>
+      <p>Ein großes Sprachmodell ist eine Generative KI, die auf Text spezialisiert ist. Es hat aus Büchern, Webseiten und anderen Texten gelernt, wie Sprache aufgebaut ist. Stellt man ihm eine Frage, berechnet es Stück für Stück die wahrscheinlich passendste Fortsetzung.</p>
+      <h3>Tokens</h3>
+      <p>Das Modell liest keine ganzen Wörter, sondern <b>Tokens</b>: Wortteile, kurze Wörter oder Satzzeichen. „Matroschka“ wird zum Beispiel in mehrere Stücke zerlegt.</p>
+      <h3>Warum diese Ebene zusätzlich ist</h3>
+      <p>In der üblichen Darstellung hat das Matroschka-Prinzip 4 Ebenen: KI, Machine Learning, Deep Learning, Generative KI. Die 5. Ebene ist eine Verständnishilfe: Sie zeigt, dass ChatGPT, Claude und Gemini nur ein Ausschnitt der Generativen KI sind.</p>
+      <h3>Gut zu wissen</h3>
+      <ul>
+        <li>„Groß“ bezieht sich auf die Zahl der Parameter (der Regler aus dem Mischpult-Bild), heute oft viele Milliarden.</li>
+        <li>Viele aktuelle Modelle verarbeiten neben Text auch Bilder oder Ton. Man nennt sie dann „multimodal“.</li>
+      </ul>`
+  }
+];
+
+const UEBERBLICK = {
+  ketten: [
+    { von: 'KI → Machine Learning', plus: '+ Lernen', text: 'Statt fester Regeln lernt das System aus Beispielen und Daten.' },
+    { von: 'Machine Learning → Deep Learning', plus: '+ Tiefe', text: 'Neuronale Netze mit vielen Schichten finden die Merkmale selbst.' },
+    { von: 'Deep Learning → Generative KI', plus: '+ Erzeugen', text: 'Statt nur einzuordnen, entsteht etwas Neues.' },
+    { von: 'Generative KI → Sprachmodelle', plus: '+ Sprache', text: 'Spezialisiert auf Text: ChatGPT, Claude & Co. (Zusatzebene)', zusatz: true }
+  ],
+  regel: '<b>Die Teilmengen-Regel:</b> Jeder innere Kreis gehört ganz zum äußeren. Jedes Sprachmodell ist Generative KI, Deep Learning, Machine Learning und KI. Umgekehrt gilt das nicht: Nicht jede KI lernt.',
+  merksatz: '<b>Merksatz:</b> KI ist der Oberbegriff. Machine Learning lernt aus Daten. Deep Learning lernt mit vielen Schichten. Generative KI erzeugt Neues. Darunter liegt immer Wahrscheinlichkeit, kein Wissensspeicher.',
+  mehr: `
+    <h2>Die Zusammenhänge</h2>
+    <p class="klein">Von außen nach innen wird es immer spezieller</p>
+    <h3>Jede Ebene bringt etwas dazu</h3>
+    <ul>
+      <li><b>KI → Machine Learning: das Lernen.</b> Ein Navi mit fest programmierter Routenberechnung ist KI. Ein Spamfilter, der aus markierten E-Mails lernt, ist Machine Learning.</li>
+      <li><b>Machine Learning → Deep Learning: die Tiefe.</b> Viele Schichten finden selbst heraus, worauf es ankommt. Dafür braucht es mehr Daten und mehr Rechenleistung.</li>
+      <li><b>Deep Learning → Generative KI: das Erzeugen.</b> Die Gesichtserkennung im Handy ordnet ein. Ein Bildgenerator erzeugt ein Gesicht, das es nie gab.</li>
+      <li><b>Generative KI → Große Sprachmodelle: die Sprache</b> (Zusatzebene). ChatGPT & Co. sind der bekannteste Teil der Generativen KI, aber nicht der einzige.</li>
+    </ul>
+    <h3>Häufige Irrtümer</h3>
+    <ul>
+      <li>„KI und Machine Learning sind dasselbe.“ Falsch: Machine Learning ist ein Teil der KI.</li>
+      <li>„ChatGPT ist die KI.“ Zu eng: ChatGPT ist ein Sprachmodell, also nur der innerste Kreis.</li>
+      <li>„Die KI weiß das.“ Generative KI berechnet wahrscheinliche Antworten. Sie kann sich irren.</li>
+      <li>Prüfungsfalle: Wird nach dem selbstständigen Lernen „aus Erfahrung“ in vielen Schichten gefragt, ist <b>Deep Learning</b> gemeint, nicht bestärkendes Lernen.</li>
+    </ul>
+    <h3>Quellen</h3>
+    <ul class="klein">
+      <li>McCarthy, Minsky, Rochester, Shannon: A Proposal for the Dartmouth Summer Research Project on Artificial Intelligence, 1955</li>
+      <li>Samuel, A. L.: Some Studies in Machine Learning Using the Game of Checkers. IBM Journal, 1959</li>
+      <li>Krizhevsky, Sutskever, Hinton: ImageNet Classification with Deep Convolutional Neural Networks (AlexNet), 2012</li>
+      <li>Vaswani u. a.: Attention Is All You Need, 2017</li>
+      <li>OpenAI: Introducing ChatGPT, 30.11.2022</li>
+    </ul>`
+};
+
+const START_SEITE = {
+  mehr: `
+    <h2>Das Matroschka-Prinzip der KI</h2>
+    <p class="klein">Worum es in dieser Präsentation geht</p>
+    <p>Künstliche Intelligenz, Machine Learning, Deep Learning, Generative KI: Die Begriffe klingen ähnlich und werden oft durcheinander verwendet. Sie stecken aber ineinander wie bei einer russischen Matroschka. Jede innere Ebene ist ein Teil der äußeren.</p>
+    <p>Die Präsentation öffnet Ebene für Ebene, von außen nach innen. Am Ende zeigt sie alle zusammen und erklärt, was jede Ebene Neues mitbringt.</p>
+    <h3>Bedienung</h3>
+    <ul>
+      <li>Weiter: Klick, Leertaste, Pfeil nach rechts oder Klicker</li>
+      <li>Zurück: Pfeil nach links</li>
+      <li>Direkt springen: Tasten 1 bis 7</li>
+      <li>Mehr dazu: Taste M</li>
+      <li>Im Überblick führt ein Klick auf eine Überschrift zurück zu ihrer Erklärung.</li>
+    </ul>`
+};
+
+/* ================= GEOMETRIE ================= */
+const N = EBENEN.length;            // 5 Kreise
+const SCHRITTE = N + 2;             // Startseite + 5 Fokus-Schritte + Überblick
+const START_R = [220, 180, 140, 100, 62];   // Startseite: kleine Matroschka
+const BAND = 62;                    // Höhe der Ringe oben im Zoom
+const START = { cx: 800, cy: 462, r: 432 };   // erster, ganzer Kreis
+const FUELL = ['--f0', '--f1', '--f2', '--f3', '--f4'];
+
+function oben(j) { return 24 + j * BAND; }
+function kuppel(j, s) {
+  const unten = 1800 + 300 * s;      // wächst mit jedem Schritt: Zoom-Gefühl
+  const t = oben(j), r = (unten - t) / 2;
+  return { cx: 800, cy: t + r, rx: r, ry: r, op: 1 };
+}
+// Überblick: ineinander, nach links aufgefächert
+const UE = { cy: 262, ry: [203, 178, 153, 128, 104], L: [40, 330, 620, 910, 1200], R: [1560, 1540, 1520, 1500, 1480] };
+
+function geometrie(s) {
+  if (s === -1) return START_R.map(r => ({ cx: 800, cy: 840 - r, rx: r, ry: r, op: 1 }));
+  const g = [];
+  for (let j = 0; j < N; j++) {
+    if (s === N) {
+      g.push({ cx: (UE.L[j] + UE.R[j]) / 2, cy: UE.cy, rx: (UE.R[j] - UE.L[j]) / 2, ry: UE.ry[j], op: 1 });
+    } else if (s === 0) {
+      g.push(j === 0 ? { cx: START.cx, cy: START.cy, rx: START.r, ry: START.r, op: 1 }
+                     : { cx: 800, cy: 640, rx: 0, ry: 0, op: 0 });
+    } else if (j <= s) {
+      g.push(kuppel(j, s));
+    } else {
+      g.push({ cx: 800, cy: 700, rx: 0, ry: 0, op: 0 });
+    }
+  }
+  return g;
+}
+
+// Überschriften: Position, Größe, Ausrichtung je Schritt
+function titelLage(j, s) {
+  if (s === -1) return { x: 800, y: j === 0 ? 142 : oben(j) + 30, gr: j === 0 ? 46 : 50, mitte: true, sichtbar: false };
+  if (s === N) {
+    const x = j === N - 1 ? UE.L[j] + 30 : UE.L[j] + 40;
+    return { x, y: 203, gr: 22, mitte: false, sichtbar: true };
+  }
+  if (s === 0) {
+    return j === 0 ? { x: 800, y: 142, gr: 46, mitte: true, sichtbar: true }
+                   : { x: 800, y: oben(j) + 30, gr: 50, mitte: true, sichtbar: false };
+  }
+  if (j < s)  return { x: 800, y: oben(j) + 17, gr: 23, mitte: true, sichtbar: true };
+  if (j === s) return { x: 800, y: oben(j) + 30, gr: 50, mitte: true, sichtbar: true };
+  return { x: 800, y: oben(j) + 30, gr: 50, mitte: true, sichtbar: false };
+}
+
+/* ================= AUFBAU ================= */
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('kreise');
+const titelEbene = document.getElementById('titel-ebene');
+const inhaltEbene = document.getElementById('inhalt-ebene');
+const ellipsen = [], titel = [], inhalte = [], kurztexte = [];
+
+EBENEN.forEach((e, j) => {
+  const el = document.createElementNS(NS, 'ellipse');
+  el.style.fill = `var(${FUELL[j]})`;
+  if (e.zusatz) el.classList.add('zusatz');
+  svg.appendChild(el); ellipsen.push(el);
+
+  const t = document.createElement('div');
+  t.className = 'titel' + (e.zusatz ? ' zusatz' : '');
+  t.textContent = e.titel;
+  titelEbene.appendChild(t); titel.push(t);
+  const springe = ev => { if (!t.classList.contains('klickbar')) return; ev.stopPropagation(); ev.preventDefault(); zeige(j + 1); };
+  t.addEventListener('click', springe);
+  t.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') springe(ev); });
+
+  const d = document.createElement('div');
+  d.className = 'inhalt' + (j === 0 ? ' kompakt' : '');
+  d.innerHTML =
+    `<p class="untertitel">${e.untertitel}${e.badge ? ` <span class="badge">${e.badge}</span>` : ''}</p>` +
+    `<p class="definition">${e.definition}</p>` +
+    `<div class="karten">${e.karten.map(k => `<div class="karte"><h3>${k[0]}</h3>${k[1]}</div>`).join('')}</div>` +
+    `<div class="wichtig">${e.wichtig}</div>` +
+    `<div class="zentriert"><button type="button" class="mehr-knopf" aria-pressed="false" aria-controls="schublade"><span class="pfeil">＋</span>Mehr dazu <span class="taste">(M)</span></button></div>`;
+  if (j === 0) { d.style.top = '200px'; d.style.width = '730px'; }
+  else { d.style.top = (oben(j) + 94) + 'px'; d.style.width = '1080px'; }
+  inhaltEbene.appendChild(d); inhalte.push(d);
+
+  const k = document.createElement('div');
+  k.className = 'kurz';
+  k.innerHTML = e.kurz;
+  k.style.left = (j === N - 1 ? UE.L[j] + 30 : UE.L[j] + 40) + 'px';
+  k.style.top = '233px';
+  k.style.width = (j === N - 1 ? 235 : 238) + 'px';
+  k.addEventListener('click', ev => { if (!k.classList.contains('aktiv')) return; ev.stopPropagation(); zeige(j + 1); });
+  inhaltEbene.appendChild(k); kurztexte.push(k);
+});
+
+const zus = document.createElement('div');
+zus.className = 'inhalt';
+zus.id = 'zusammenhang';
+zus.innerHTML =
+  `<h2>Die Zusammenhänge <span>· von außen nach innen wird es immer spezieller</span></h2>` +
+  `<div class="kette">${UEBERBLICK.ketten.map(k => `<div class="glied${k.zusatz ? ' zusatz' : ''}"><div class="von">${k.von}</div><div class="plus">${k.plus}</div>${k.text}</div>`).join('')}</div>` +
+  `<div class="unten"><div class="wichtig">${UEBERBLICK.regel}</div><div class="wichtig">${UEBERBLICK.merksatz}</div></div>` +
+  `<div class="knopfzeile"><button type="button" class="mehr-knopf" aria-pressed="false" aria-controls="schublade"><span class="pfeil">＋</span>Mehr dazu <span class="taste">(M)</span></button><p class="tipp">Tipp: Eine Überschrift oben anklicken führt zurück zu ihrer Erklärung.</p></div>`;
+inhaltEbene.appendChild(zus);
+
+const start = document.createElement('div');
+start.className = 'inhalt';
+start.id = 'start';
+start.innerHTML =
+  `<p class="eyebrow">Ingo Günther</p>` +
+  `<h1>Das Matroschka-Prinzip der KI</h1>` +
+  `<p class="leitfrage">Wie Künstliche Intelligenz, Machine Learning, Deep Learning und Generative KI ineinanderstecken</p>` +
+  `<p class="hinweis">Weiter mit Klick, Leertaste oder Pfeiltaste</p>` +
+  `<div class="zentriert"><button type="button" class="mehr-knopf" aria-pressed="false" aria-controls="schublade"><span class="pfeil">＋</span>Mehr dazu <span class="taste">(M)</span></button></div>`;
+inhaltEbene.appendChild(start);
+
+/* ================= ANIMATION ================= */
+const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let aktuell = EBENEN.map(() => ({ cx: 800, cy: 462, rx: 0, ry: 0, op: 1 }));
+let animId = 0;
+
+function zeichne(g) {
+  g.forEach((k, j) => {
+    const el = ellipsen[j];
+    el.setAttribute('cx', k.cx.toFixed(1));
+    el.setAttribute('cy', k.cy.toFixed(1));
+    el.setAttribute('rx', Math.max(0, k.rx).toFixed(1));
+    el.setAttribute('ry', Math.max(0, k.ry).toFixed(1));
+    el.setAttribute('opacity', k.op.toFixed(3));
+  });
+}
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+function bewege(ziel, dauer = 950, verz = 150) {
+  const von = aktuell.map(k => ({ ...k }));
+  const id = ++animId;
+  if (ruhig) { aktuell = ziel; zeichne(ziel); return; }
+  const start = performance.now() + verz;
+  function bild(jetzt) {
+    if (id !== animId) return;
+    const t = Math.min(1, Math.max(0, (jetzt - start) / dauer));
+    const e = ease(t);
+    aktuell = von.map((a, j) => {
+      const b = ziel[j];
+      // neue Kreise sofort sichtbar machen, verschwindende erst am Ende ausblenden
+      const op = b.op >= a.op ? b.op : a.op + (b.op - a.op) * e;
+      return { cx: a.cx + (b.cx - a.cx) * e, cy: a.cy + (b.cy - a.cy) * e,
+               rx: a.rx + (b.rx - a.rx) * e, ry: a.ry + (b.ry - a.ry) * e, op };
+    });
+    zeichne(aktuell);
+    if (t < 1) requestAnimationFrame(bild);
+  }
+  requestAnimationFrame(bild);
+  // Absicherung: Läuft requestAnimationFrame nicht (Tab im Hintergrund), trotzdem Endlage zeigen
+  setTimeout(() => { if (id === animId) { aktuell = ziel; zeichne(ziel); } }, verz + dauer + 120);
+}
+
+/* ================= STEUERUNG ================= */
+let schritt = 0;
+const nr = document.getElementById('nr'), stand = document.getElementById('stand');
+const schublade = document.getElementById('schublade'), sInhalt = document.getElementById('schublade-inhalt');
+const ansage = document.getElementById('ansage');
+
+function zeige(s, ohneAnimation) {
+  schritt = Math.max(0, Math.min(SCHRITTE - 1, s));
+  const lv = schritt - 1;            // -1 Startseite, 0 bis 4 Kreise, 5 Überblick
+  const g = geometrie(lv);
+  if (ohneAnimation) { aktuell = g; zeichne(g); } else bewege(g);
+
+  EBENEN.forEach((e, j) => {
+    const l = titelLage(j, lv), t = titel[j];
+    t.style.left = l.x + 'px';
+    t.style.top = l.y + 'px';
+    t.style.fontSize = l.gr + 'px';
+    t.style.transform = l.mitte ? 'translateX(-50%)' : 'translateX(0)';
+    t.classList.toggle('weg', !l.sichtbar);
+    const klick = lv === N;
+    t.classList.toggle('klickbar', klick);
+    if (klick) { t.tabIndex = 0; t.setAttribute('role', 'link'); t.title = 'Zur Erklärung: ' + e.titel; }
+    else { t.removeAttribute('tabindex'); t.removeAttribute('role'); t.removeAttribute('title'); }
+    inhalte[j].classList.toggle('aktiv', j === lv);
+    kurztexte[j].classList.toggle('aktiv', lv === N);
+  });
+  zus.classList.toggle('aktiv', lv === N);
+  start.classList.toggle('aktiv', lv === -1);
+  document.getElementById('kopf').classList.toggle('weg', lv === -1);
+
+  nr.textContent = schritt + 1;
+  document.getElementById('zum-start').setAttribute('aria-current', String(lv === -1));
+  document.getElementById('zur-uebersicht').setAttribute('aria-current', String(lv === N));
+  const name = lv === -1 ? 'Start' : lv === N ? 'Die Zusammenhänge' : EBENEN[lv].titel;
+  stand.textContent = `Folie ${schritt + 1} von ${SCHRITTE} · ${name}`;
+  ansage.textContent = name;
+  sInhalt.innerHTML = lv === -1 ? START_SEITE.mehr : lv === N ? UEBERBLICK.mehr : EBENEN[lv].mehr;
+  try { history.replaceState(null, '', '#' + (schritt + 1)); } catch (e) {}
+}
+
+function weiter() { if (schritt < SCHRITTE - 1) zeige(schritt + 1); }
+function zurueck() { if (schritt > 0) zeige(schritt - 1); }
+function schubladeUmschalten(auf) {
+  const offen = auf === undefined ? !schublade.classList.contains('offen') : auf;
+  schublade.classList.toggle('offen', offen);
+  schublade.setAttribute('aria-hidden', String(!offen));
+  document.querySelectorAll('.mehr-knopf').forEach(b => b.setAttribute('aria-pressed', String(offen)));
+}
+
+document.getElementById('buehne').addEventListener('click', e => {
+  if (e.target.closest('a, button, .titel.klickbar, .kurz.aktiv')) return;
+  if (schublade.classList.contains('offen')) { schubladeUmschalten(false); return; }
+  weiter();
+});
+document.getElementById('weiter').addEventListener('click', weiter);
+document.getElementById('zurueck').addEventListener('click', zurueck);
+document.getElementById('zum-start').addEventListener('click', () => zeige(0));
+document.getElementById('zur-uebersicht').addEventListener('click', () => zeige(SCHRITTE - 1));
+document.querySelectorAll('.mehr-knopf').forEach(b => b.addEventListener('click', () => schubladeUmschalten()));
+document.getElementById('zu').addEventListener('click', () => schubladeUmschalten(false));
+
+document.addEventListener('keydown', e => {
+  if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) { e.preventDefault(); weiter(); }
+  else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); zurueck(); }
+  else if (k === 'Home') { e.preventDefault(); zeige(0); }
+  else if (k === 'End') { e.preventDefault(); zeige(SCHRITTE - 1); }
+  else if (k === 'm' || k === 'M' || k === 'n' || k === 'N') { schubladeUmschalten(); }
+  else if (k === 'Escape') { schubladeUmschalten(false); }
+  else if (/^[1-9]$/.test(k) && Number(k) <= SCHRITTE) { zeige(Number(k) - 1); }
+});
+
+/* Bühne an das Fenster anpassen */
+function skaliere() {
+  const s = Math.min(innerWidth / 1600, (innerHeight - 52) / 900);
+  document.getElementById('buehne').style.setProperty('--s', s);
+}
+addEventListener('resize', skaliere);
+skaliere();
+
+/* Start: Der erste Kreis wächst heraus */
+const ausHash = parseInt((location.hash || '').slice(1), 10);
+zeichne(aktuell);
+zeige(Number.isFinite(ausHash) ? ausHash - 1 : 0);
+</script>
+</body>
+</html>
